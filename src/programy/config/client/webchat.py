@@ -24,6 +24,7 @@ class WebChatConfiguration(BaseConfigurationData):
         self._host = "0.0.0.0"
         self._port = 80
         self._debug = False
+        self.use_api_keys = False
         BaseConfigurationData.__init__(self, "webchat")
 
     @property
