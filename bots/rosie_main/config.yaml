@@ -1,0 +1,45 @@
+
+brain:
+
+    supress_warnings: true
+
+    allow_system_aiml: true
+    allow_learn_aiml: true
+    allow_learnf_aiml: true
+
+    files:
+        aiml:
+            files: /rosie/lib/aiml
+            extension: .aiml
+            directories: false
+        sets:
+            files: /rosie/lib/sets
+            extension: .set
+            directories: false
+        maps:
+            files: /rosie/lib/maps
+            extension: .map
+            directories: false
+        denormal: /rosie/lib/substitutions/denormal.substitution
+        normal: /rosie/lib/substitutions/normal.substitution
+        gender: /rosie/lib/substitutions/gender.substitution
+        person: /rosie/lib/substitutions/person.substitution
+        person2: /rosie/lib/substitutions/person2.substitution
+        properties: /rosie/lib/system/rosie.properties
+
+bot:
+    prompt: ">>>"
+    initial_question: Hi, how can I help you today?
+    default_response: Sorry, I don't have an answer for that!
+    exit_response: So long, and thanks for the fish!
+
+rest:
+  host: 0.0.0.0
+  port: 8421
+  debug: false
+
+webchat:
+  host: 0.0.0.0
+  port: 8421
+  debug: false
+  
