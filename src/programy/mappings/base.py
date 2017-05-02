@@ -16,6 +16,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 import logging
 import re
+import json
 from abc import ABCMeta, abstractmethod
 
 class BaseCollection(object):
@@ -33,10 +34,38 @@ class BaseCollection(object):
         Never Implemented
         """
 
+    @abstractmethod
+    def process_json(self, jsonobj):
+        """
+        Never Implemented
+        """
+
     def load_from_filename(self, filename):
+        count = 0        
+        try:
+            with open(filename, 'r', encoding='utf8') as my_file:
+                jsonobj=json.load(my_file)
+            count=self.process_json(jsonobj)
+        except Exception as excep:        
+            logging.warn("Failed to load data from [%s] as JSON, will retry in the old style. %s", filename, excep)
+            with open(filename, "r+") as data_file:
+                for line in data_file:
+                    line = line.strip()
+                    if line is not None and len(line) > 0:
+                        splits = self.split_line(line)
+                        if self.process_splits(splits) is True:
+                            count += 1
+        return count
+
+    def load_from_text(self, text):
         count = 0
-        with open(filename, "r+") as data_file:
-            for line in data_file:
+        try:
+            jsonobj=json.loads(text)
+            count=self.process_json(jsonobj)
+        except Exception as excep:        
+            logging.warn("Failed to load data [%s] as JSON, will retry in the old style. %s", text, excep)        
+            lines = text.split("\n")
+            for line in lines:
                 line = line.strip()
                 if line is not None and len(line) > 0:
                     splits = self.split_line(line)
@@ -44,16 +73,6 @@ class BaseCollection(object):
                         count += 1
         return count
 
-    def load_from_text(self, text):
-        count = 0
-        lines = text.split("\n")
-        for line in lines:
-            line = line.strip()
-            if line is not None and len(line) > 0:
-                splits = self.split_line(line)
-                if self.process_splits(splits) is True:
-                    count += 1
-        return count
 
 class SingleStringCollection(BaseCollection):
 
@@ -71,6 +90,9 @@ class SingleStringCollection(BaseCollection):
     def process_splits(self, splits):
         self._strings.append(splits[0])
         return True
+
+    def process_json(self, jsonobj):
+        self._strings=jsonobj
 
 
 class DoubleStringCharSplitCollection(BaseCollection):
@@ -113,6 +135,10 @@ class DoubleStringCharSplitCollection(BaseCollection):
     def process_splits(self, splits):
         self.pairs.append([splits[0], splits[1]])
         return True
+
+    def process_json(self, jsonobj):
+        self.pairs=jsonobj
+
 
 class DoubleStringPatternSplitCollection(BaseCollection):
 
@@ -194,6 +220,9 @@ class DoubleStringPatternSplitCollection(BaseCollection):
 
         return re.sub(' +', ' ', replacable.strip())
 
+    def process_json(self, jsonobj):
+        self.pairs=jsonobj
+
 
 class TripleStringCollection(BaseCollection):
 
@@ -257,3 +286,6 @@ class TripleStringCollection(BaseCollection):
             self.triples[first][second] = third
 
         return True
+
+    def process_json(self, jsonobj):
+        self.triples=jsonobj
