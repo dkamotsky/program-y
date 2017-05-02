@@ -28,7 +28,7 @@ class MapLoader(FileFinder):
         the_map = {}
         try:
             with open(filename, 'r', encoding='utf8') as my_file:
-                tuple_list=json.load(mapfile)
+                tuple_list=json.load(my_file)
             for pair in tuple_list:
                 the_map[pair[0]]=pair[1]
         except Exception as excep:
