@@ -47,7 +47,7 @@ bot:
     exit_response: So long, and thanks for the fish!
 
 rest:
-  host: 127.0.0.1
-  port: 5000
+  host: 0.0.0.0
+  port: 8421
   debug: true
   use_api_keys: false
