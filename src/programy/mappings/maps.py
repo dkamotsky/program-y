@@ -15,6 +15,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 """
 
 import logging
+import json
 
 from programy.utils.files.filefinder import FileFinder
 
@@ -27,10 +28,17 @@ class MapLoader(FileFinder):
         the_map = {}
         try:
             with open(filename, 'r', encoding='utf8') as my_file:
-                for line in my_file:
-                    self.process_line(line, the_map)
-        except Exception as excep:
-            logging.error("Failed to load map [%s] - %s", filename, excep)
+                tuple_list=json.load(mapfile)
+            for pair in tuple_list:
+                the_map[pair[0]]=pair[1]
+        except: Exception as excep:
+            logging.warn("Failed to load map [%s] as JSON, will retry in the old style. %s", filename, excep)            
+            try:
+                with open(filename, 'r', encoding='utf8') as my_file:
+                    for line in my_file:
+                        self.process_line(line, the_map)
+            except Exception as excep:
+                logging.error("Failed to load map [%s] - %s", filename, excep)
         return the_map
 
     def load_from_text(self, text):
