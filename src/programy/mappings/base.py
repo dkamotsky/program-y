@@ -93,6 +93,7 @@ class SingleStringCollection(BaseCollection):
 
     def process_json(self, jsonobj):
         self._strings=jsonobj
+        return len(jsonobj)
 
 
 class DoubleStringCharSplitCollection(BaseCollection):
@@ -138,6 +139,7 @@ class DoubleStringCharSplitCollection(BaseCollection):
 
     def process_json(self, jsonobj):
         self.pairs=jsonobj
+        return len(jsonobj)
 
 
 class DoubleStringPatternSplitCollection(BaseCollection):
@@ -222,6 +224,7 @@ class DoubleStringPatternSplitCollection(BaseCollection):
 
     def process_json(self, jsonobj):
         self.pairs=jsonobj
+        return len(jsonobj)
 
 
 class TripleStringCollection(BaseCollection):
@@ -289,3 +292,4 @@ class TripleStringCollection(BaseCollection):
 
     def process_json(self, jsonobj):
         self.triples=jsonobj
+        return len(jsonobj)        
