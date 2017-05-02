@@ -15,6 +15,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 """
 
 import logging
+import json
 from programy.utils.files.filefinder import FileFinder
 
 class SetLoader(FileFinder):
@@ -26,10 +27,17 @@ class SetLoader(FileFinder):
         the_set = []
         try:
             with open(filename, 'r', encoding='utf8') as my_file:
-                for line in my_file:
-                    self.process_line(line, the_set)
-        except Exception as excep:
-            logging.error("Failed to load set [%s] - %s", filename, excep)
+                tuple_list=json.load(my_file)
+            for tup in tuple_list:
+                the_set.append(" ".join(tup).upper())
+        except Exception as excep:        
+            logging.warn("Failed to load set [%s] as JSON, will retry in the old style. %s", filename, excep)
+            try:
+                with open(filename, 'r', encoding='utf8') as my_file:
+                    for line in my_file:
+                        self.process_line(line, the_set)
+            except Exception as excep:
+                logging.error("Failed to load set [%s] - %s", filename, excep)
         return the_set
 
     def load_from_text(self, text):
