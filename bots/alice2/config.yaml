@@ -49,5 +49,11 @@ bot:
 rest:
   host: 0.0.0.0
   port: 8421
-  debug: true
+  debug: false
   use_api_keys: false
+
+webchat:
+  host: 0.0.0.0
+  port: 8421
+  debug: false
+  
