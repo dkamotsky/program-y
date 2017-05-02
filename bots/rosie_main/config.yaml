@@ -27,17 +27,18 @@ brain:
         person2: /rosie/lib/substitutions/person2.substitution
         predicates: /program-y/bots/rosie_fixed/config/predicates.txt
         pronouns: /program-y/bots/rosie_fixed/config/pronouns.txt
-        properties: /program-y/bots/rosie_fixed/config/properties.txt
+        properties: /rosie/lib/system/rosie.properties
         triples: /program-y/bots/rosie_fixed/config/triples.txt
         preprocessors: /program-y/bots/rosie_fixed/config/preprocessors.conf
         postprocessors: /program-y/bots/rosie_fixed/config/postprocessors.conf
 
 bot:
     prompt: ">>>"
-    initial_question: Hi, how can I help you today?
+    initial_question: Hello Valued Customer, what are you looking for today?
     default_response: Sorry, I don't have an answer for that!
-    exit_response: So long, and thanks for the fish!
-
+    exit_response: Thank you for shopping at Macy's!
+    override_predicates: false
+    
 rest:
   host: 0.0.0.0
   port: 8421
