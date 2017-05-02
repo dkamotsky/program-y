@@ -25,7 +25,12 @@ brain:
         gender: /program-y/bots/rosie_fixed/config/gender.txt
         person: /program-y/bots/rosie_fixed/config/person.txt
         person2: /program-y/bots/rosie_fixed/config/person2.txt
-        properties: /rosie/lib/system/rosie.properties
+        predicates: /program-y/bots/rosie_fixed/config/predicates.txt
+        pronouns: /program-y/bots/rosie_fixed/config/pronouns.txt
+        properties: /program-y/bots/rosie_fixed/config/properties.txt
+        triples: /program-y/bots/rosie_fixed/config/triples.txt
+        preprocessors: /program-y/bots/rosie_fixed/config/preprocessors.conf
+        postprocessors: /program-y/bots/rosie_fixed/config/postprocessors.conf
 
 bot:
     prompt: ">>>"
