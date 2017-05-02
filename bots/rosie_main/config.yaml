@@ -20,11 +20,11 @@ brain:
             files: /rosie/lib/maps
             extension: .map
             directories: false
-        denormal: /rosie/lib/substitutions/denormal.substitution
-        normal: /rosie/lib/substitutions/normal.substitution
-        gender: /rosie/lib/substitutions/gender.substitution
-        person: /rosie/lib/substitutions/person.substitution
-        person2: /rosie/lib/substitutions/person2.substitution
+        denormal: /program-y/bots/rosie_fixed/config/denormal.txt
+        normal: /program-y/bots/rosie_fixed/config/normal.txt
+        gender: /program-y/bots/rosie_fixed/config/gender.txt
+        person: /program-y/bots/rosie_fixed/config/person.txt
+        person2: /program-y/bots/rosie_fixed/config/person2.txt
         properties: /rosie/lib/system/rosie.properties
 
 bot:
