@@ -1,13 +1,13 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>Y-Bot Chat Window</title>
+<title>Leslie Chat Window</title>
 <link type="text/css" rel="stylesheet" href="static/style.css" />
 </head>
 
 <div id="wrapper">
     <div id="menu">
-        <p class="welcome">Hello, my name is Y-Bot, how can I help you today? <b></b></p>
+        <p class="welcome">Hello, my name is Leslie, how can I help you today? <b></b></p>
         <div style="clear:both"></div>
     </div>
 
@@ -36,7 +36,7 @@ $(document).ready(function(){
         var response = JSON.parse(xhttp.responseText);
 
         $("#chatbox").append ("<p><b>You:</b> "+response.response.question+"</p>" );
-        $("#chatbox").append ("<p><b>Y-Bot:</b> "+response.response.answer+"</p>" );
+        $("#chatbox").append ("<p><b>Leslie:</b> "+response.response.answer+"</p>" );
         $("#chatbox")[0].scrollTop = $("#chatbox")[0].scrollHeight;
 
         $("#usermsg").attr("value", "");
