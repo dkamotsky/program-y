@@ -20,17 +20,23 @@ from programy.parser.template.maps.map import TemplateMap
 
 class SuccessorMap(TemplateMap):
 
-    NAME = "successor"
+    NAME = "SUCCESSOR"
 
     def __init__(self):
         TemplateMap.__init__(self)
 
-    def get_name(self):
+    @staticmethod
+    def get_name():
         return SuccessorMap.NAME
 
     def map(self, value):
-        int_value = int(value)
-        str_value = str(int_value + 1)
-        return str_value
+        try:
+            int_value = int(value)
+            str_value = str(int_value + 1)
+            logging.debug("SuccessorMap converted %s to %s" % (value, str_value))
+            return str_value
+        except:
+            logging.error("SuccessorMap could not convert %s to integer string" % (value))
+            return ""
 
 

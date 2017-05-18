@@ -58,7 +58,7 @@ class BrainServiceConfiguration(object):
         return self._params.keys()
 
     def set_parameter(self, key, value):
-        self._params[key] = value
+        self._params[key.upper()] = value
 
     def parameter(self, name):
         if name in self._params:
