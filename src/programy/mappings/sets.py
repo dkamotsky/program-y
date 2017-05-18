@@ -30,7 +30,7 @@ class SetLoader(FileFinder):
             with open(filename, 'r', encoding='utf8') as my_file:
                 tuple_list=json.load(my_file)
             for tup in tuple_list:
-                the_set.append(" ".join(tup).upper())
+                self.process_line(" ".join(tup), the_set)
         except Exception as excep:        
             logging.warn("Failed to load set [%s] as JSON, will retry in the old style. %s", filename, excep)
             try:
