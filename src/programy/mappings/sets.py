@@ -20,17 +20,17 @@ from programy.utils.files.filefinder import FileFinder
 
 def add_words(set_dict):
     for k in set_dict.keys():
-        for word in k.split():            
+        for word in k:            
             if not word in set_dict:
                 set_dict[word]=False
         
 def add_prefixes(set_dict):
     for k in set_dict.keys():
-        words=k.split()
-        for i in range(1, len(words)-1):
-            v=tuple(words[0:-i])
-            if not v in set_dict:
-                set_dict[v]=False         
+        if isinstance(k, tuple):
+            for i in range(1, len(k)-1):
+                k=k[0:-i]
+                if not k in set_dict:
+                    set_dict[k]=False         
 
 class SetLoader(FileFinder):
     def __init__(self):
@@ -67,7 +67,7 @@ class SetLoader(FileFinder):
     def process_line(self, line, the_set):
         text = line.strip()
         if text is not None and len(text) > 0:
-            the_set[tuple(text.split().upper())] = True
+            the_set[tuple(text.upper().split())] = True
 
 
 class SetCollection(object):
