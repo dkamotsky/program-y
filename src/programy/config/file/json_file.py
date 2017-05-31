@@ -14,60 +14,47 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-from programy.utils.parsing.linenumxml import LineNumberingParser
-import xml.etree.ElementTree as ET
+import json
 
 import logging
 from programy.config.file.file import BaseConfigurationFile
 
-class XMLConfigurationFile(BaseConfigurationFile):
+
+class JSONConfigurationFile(BaseConfigurationFile):
 
     def __init__(self, client_config):
         BaseConfigurationFile.__init__(self, client_config)
-        self.xml_data = None
+        self.json_data = None
 
     def load_from_text(self, text, bot_root):
-        tree = ET.fromstring(text)
-        self.xml_data = tree
+        self.json_data = json.loads(text)
         self.client_config.load_config_data(self, bot_root)
 
     def load_from_file(self, filename, bot_root):
-        with open(filename, 'r+') as xml_data_file:
-            tree = ET.parse(xml_data_file, parser=LineNumberingParser())
-            self.xml_data = tree.getroot()
+        with open(filename, 'r+') as json_data_file:
+            self.json_data = json.load(json_data_file)
             self.client_config.load_config_data(self, bot_root)
 
     def get_section(self, section_name, parent_section=None):
         if parent_section is None:
-            return self.xml_data.find(section_name)
+            return self.json_data[section_name]
         else:
-            return parent_section.find(section_name)
+            return parent_section[section_name]
 
     def get_section_data(self, section_name, parent_section=None):
-        if parent_section is None:
-            section = self.xml_data.find(section_name)
-        else:
-            section = parent_section.find(section_name)
-        data = {}
-        for child in section:
-            data[child.tag] = child.text
-        return data
+        return self.get_section(section_name, parent_section)
 
     def get_child_section_keys(self, section_name, parent_section=None):
-        keys = []
         if parent_section is None:
-            for child in self.xml_data.find(section_name):
-                keys.append(child.tag)
+            return self.json_data[section_name].keys()
         else:
-            for child in parent_section.find(section_name):
-                keys.append(child.tag)
-        return keys
+            return parent_section[section_name].keys()
 
     def get_option(self, section, option_name, missing_value=None):
-        child = section.find(option_name)
-        if child is not None:
-            return self._infer_type_from_string(child.text)
+        if option_name in section:
+            return section[option_name]
         else:
             logging.error("Missing value for [%s] in config section [%s], return default value %s", option_name, section, missing_value)
             return missing_value
+
 

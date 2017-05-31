@@ -1,6 +1,7 @@
 import logging
 import csv
 import re
+import datetime
 
 from programy.clients.clients import BotClient
 from programy.utils.files.filefinder import FileFinder
@@ -80,25 +81,42 @@ class TestRunnerBotClient(BotClient):
     def test_dir(self):
         return self.arguments.args.test_dir
 
+    @property
+    def test_file(self):
+        return self.arguments.args.test_file
+
+    @property
+    def verbose(self):
+        return self.arguments.args.verbose
+
     def get_description(self):
         return 'ProgramY Test Runner Client'
 
     def add_client_arguments(self, parser):
         parser.add_argument('--test_dir', dest='test_dir', help='directory containing test files to run against grammar')
+        parser.add_argument('--test_file', dest='test_file', help='Single file ot tests to run against grammar')
+        parser.add_argument('--verbose', dest='verbose', action='store_true', help='print out each question to be asked')
 
     def set_environment(self):
         self.bot.brain.predicates.pairs.append(["env", "TestRunner"])
 
     def run(self):
-        print ("Loading Tests from directory [%s]" % self.test_dir)
         file_finder = TestFileFileFinder()
-        collection = file_finder.load_dir_contents(self.test_dir, extension=".tests")
+        if self.test_dir is not None:
+            print ("Loading Tests from directory [%s]" % self.test_dir)
+            collection = file_finder.load_dir_contents(self.test_dir, extension=".tests", subdir=True)
+        else:
+            collection = file_finder.load_single_file_contents(self.test_file)
+
         successes = []
         failures = []
+        start = datetime.datetime.now()
         for category in collection.keys():
             for test in collection[category]:
                 test.category = category
-                response = self.bot.ask_question(self.clientid, test.question).upper()
+                if self.verbose:
+                    print(test.question)
+                response = self.bot.ask_question(self.clientid, test.question)
                 success = False
                 test.response = response
                 if len(test.answers_regex) == 0:
@@ -114,11 +132,16 @@ class TestRunnerBotClient(BotClient):
                     successes.append(test)
                 else:
                     failures.append(test)
+        stop = datetime.datetime.now()
+        diff = stop-start
+        total_tests = len(successes)+len(failures)
 
         print ("Successes: %d" % len(successes))
         print ("Failures:  %d" % len(failures))
         for failure in failures:
             print ("\t%s: [%s] expected [%s], got [%s]" % (failure.category, failure.question, failure.answers_string, failure.response))
+        print ("Total processing time %f.2 secs"%diff.total_seconds())
+        print ("Thats approx %f tests per sec"%(total_tests/diff.total_seconds()))
 
 if __name__ == '__main__':
 

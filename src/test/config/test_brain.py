@@ -3,7 +3,7 @@ import unittest
 from programy.config.brain import BrainFileConfiguration
 from programy.config.brain import BrainServiceConfiguration
 from programy.config.brain import BrainConfiguration
-from programy.config.file.yaml import YamlConfigurationFile
+from programy.config.file.yaml_file import YamlConfigurationFile
 from programy.config.client.client import ClientConfiguration
 
 
@@ -51,6 +51,7 @@ class BrainConfigurationTests(unittest.TestCase):
           allow_system_aiml: true
           allow_learn_aiml: true
           allow_learnf_aiml: true
+          dump_to_file: /tmp/braintree.txt
 
           files:
                 aiml:
@@ -87,7 +88,7 @@ class BrainConfigurationTests(unittest.TestCase):
         self.assertEqual(True, brain_config.allow_system_aiml)
         self.assertEqual(True, brain_config.allow_learn_aiml)
         self.assertEqual(True, brain_config.allow_learnf_aiml)
-
+        self.assertEqual("/tmp/braintree.txt", brain_config.dump_to_file)
         self.assertIsNotNone(brain_config.aiml_files)
         self.assertIsNotNone(brain_config.set_files)
         self.assertIsNotNone(brain_config.map_files)
