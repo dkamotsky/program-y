@@ -18,6 +18,19 @@ import logging
 import json
 from programy.utils.files.filefinder import FileFinder
 
+def add_words(set_dict):
+    for k in set_dict.keys():
+        for word in k.split():            
+            if not word in set_dict:
+                set_dict[word]=False
+        
+def add_prefixes(set_dict):
+    for k in set_dict.keys():
+        words=k.split()
+        for i in range(1, len(words)-1):
+            v=tuple(words[0:-i])
+            if not v in set_dict:
+                set_dict[v]=False         
 
 class SetLoader(FileFinder):
     def __init__(self):
@@ -39,6 +52,8 @@ class SetLoader(FileFinder):
                         self.process_line(line, the_set)
             except Exception as excep:
                 logging.error("Failed to load set [%s] - %s", filename, excep)
+        add_words(the_set)
+        add_prefixes(the_set)
         logging.debug("Loaded set [%s]. Full contents: \n%s", filename, the_set)
         return the_set
 
@@ -52,7 +67,7 @@ class SetLoader(FileFinder):
     def process_line(self, line, the_set):
         text = line.strip()
         if text is not None and len(text) > 0:
-            the_set[text.upper()] = text
+            the_set[tuple(text.split().upper())] = True
 
 
 class SetCollection(object):
