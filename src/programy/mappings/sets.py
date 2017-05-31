@@ -30,8 +30,9 @@ def add_prefixes(set_dict):
     prefix_dict={}
     for k in set_dict.keys():
         if isinstance(k, tuple):
-            for i in range(1, len(k)-1):
+            for i in range(1, len(k)):
                 k=k[0:-i]
+                k=k[0] if len(k)==1 else k
                 if not k in set_dict:
                     prefix_dict[k]=False
     set_dict.update(prefix_dict)         
@@ -56,7 +57,6 @@ class SetLoader(FileFinder):
                         self.process_line(line, the_set)
             except Exception as excep:
                 logging.error("Failed to load set [%s] - %s", filename, excep)
-        add_words(the_set)
         add_prefixes(the_set)
         logging.debug("Loaded set [%s]. Full contents: \n%s", filename, the_set)
         return the_set
