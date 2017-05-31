@@ -19,18 +19,22 @@ import json
 from programy.utils.files.filefinder import FileFinder
 
 def add_words(set_dict):
+    word_dict={}
     for k in set_dict.keys():
         for word in k:            
             if not word in set_dict:
-                set_dict[word]=False
+                word_dict[word]=False
+    set_dict.update(word_dict)
         
 def add_prefixes(set_dict):
+    prefix_dict={}
     for k in set_dict.keys():
         if isinstance(k, tuple):
             for i in range(1, len(k)-1):
                 k=k[0:-i]
                 if not k in set_dict:
-                    set_dict[k]=False         
+                    prefix_dict[k]=False
+    set_dict.update(prefix_dict)         
 
 class SetLoader(FileFinder):
     def __init__(self):
