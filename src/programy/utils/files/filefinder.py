@@ -63,7 +63,7 @@ class FileFinder(object):
             try:
                 collection[just_filename] = self.load_file_contents(file[1])
             except Exception as e:
-                logging.error ("Failed to load file contents for file [%s]"%file[1])
+                logging.error ("Failed to load file contents for file [%s]. Exception %s.", file[1], e)
 
         return collection
 
@@ -85,6 +85,6 @@ class FileFinder(object):
         try:
             collection[just_filename] = self.load_file_contents(filename)
         except Exception as e:
-            logging.error ("Failed to load file contents for file [%s]"%filename)
+            logging.error ("Failed to load file contents for file [%s]. Exception %s.", filename, e)
 
         return collection
