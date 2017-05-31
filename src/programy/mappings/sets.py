@@ -39,6 +39,7 @@ class SetLoader(FileFinder):
                         self.process_line(line, the_set)
             except Exception as excep:
                 logging.error("Failed to load set [%s] - %s", filename, excep)
+        logging.debug("Loaded set [%s]. Full contents: \n%s", filename, the_set)
         return the_set
 
     def load_from_text(self, text):
