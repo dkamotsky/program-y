@@ -18,14 +18,6 @@ import logging
 import json
 from programy.utils.files.filefinder import FileFinder
 
-def add_words(set_dict):
-    word_dict={}
-    for k in set_dict.keys():
-        for word in k:            
-            if not word in set_dict:
-                word_dict[word]=False
-    set_dict.update(word_dict)
-        
 def add_prefixes(set_dict):
     prefix_dict={}
     for k in set_dict.keys():
