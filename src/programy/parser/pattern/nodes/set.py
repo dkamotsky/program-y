@@ -42,7 +42,7 @@ class PatternSetNode(PatternWordNode):
         elif bot.brain.sets.contains(self.set_name):
             logging.debug("Looking for [%s] in set [%s]", word, self.set_name)
             set_words = bot.brain.sets.set(self.set_name)
-            if word in set_words:
+            if set_words.get(word, False):
                 logging.debug("Found word [%s] in set [%s]"%(word, self.set_name))
                 return True
         return False
