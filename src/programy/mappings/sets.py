@@ -31,10 +31,10 @@ def add_prefixes(set_dict):
     for k in set_dict.keys():
         if isinstance(k, tuple):
             for i in range(1, len(k)):
-                k=k[0:-i]
-                k=k[0] if len(k)==1 else k
-                if not k in set_dict:
-                    prefix_dict[k]=False
+                r=k[0:-i]
+                r=r[0] if len(r)==1 else r
+                if not r in set_dict:
+                    prefix_dict[r]=False
     set_dict.update(prefix_dict)         
 
 class SetLoader(FileFinder):
