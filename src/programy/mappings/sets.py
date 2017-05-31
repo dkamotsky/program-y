@@ -30,7 +30,7 @@ def add_prefixes(set_dict):
     prefix_dict={}
     for k in set_dict.keys():
         if isinstance(k, tuple):
-            for i in range(1, len(k)):
+            for i in range(1, 2 if len(k)==1 else len(k)):
                 k=k[0:-i]
                 k=k[0] if len(k)==1 else k
                 if not k in set_dict:
