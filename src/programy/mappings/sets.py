@@ -30,7 +30,7 @@ def add_prefixes(set_dict):
     prefix_dict={}
     for k in set_dict.keys():
         if isinstance(k, tuple):
-            for i in range(1, 2 if len(k)==1 else len(k)):
+            for i in range(1, len(k)):
                 k=k[0:-i]
                 k=k[0] if len(k)==1 else k
                 if not k in set_dict:
@@ -71,7 +71,8 @@ class SetLoader(FileFinder):
     def process_line(self, line, the_set):
         text = line.strip()
         if text is not None and len(text) > 0:
-            the_set[tuple(text.upper().split())] = True
+            key=tuple(text.upper().split())
+            the_set[key[0] if len(key)==1 else key] = True
 
 
 class SetCollection(object):
