@@ -112,6 +112,13 @@ class PatternOneOrMoreWildCardNode(PatternWildCardNode):
                     context_match2 = Match(Match.WORD, child, word)
                     context.add_match(context_match2)
                     matches_add += 1
+                    
+                    skip_to=self.consume_set_phrase(bot, clientid, context, child, context_match2, words, word_no)                
+                    if skip_to is None:
+                        continue
+                    else:
+                        word_no=skip_to                    
+                    
                     match = child.consume(bot, clientid, context, words, word_no+1, type, depth+1)
                     if match is not None:
                         return match
