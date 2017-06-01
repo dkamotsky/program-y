@@ -423,12 +423,36 @@ class PatternNode(object):
                 match_node = Match(type, child, words.word(word_no))
                 context.add_match(match_node)
 
+                if child.is_set():                    
+                    phrase=words.word(word_no)
+                    if not child.has_phrase(bot, clientid, phrase):
+                        logging.debug("%sChild %s is a set [%s], trying to consume more words..." % (tabs, child._word, child.set_name))
+                        phrase_words=[phrase]
+                        for cur_word_no in range(word_no+1, words.num_words()):
+                            cur_word=words.word(cur_word_no)
+                            phrase_words.append(cur_word)
+                            phrase=tuple(phrase_words)
+                            if child.equals(bot, clientid, phrase):
+                                logging.debug("%sSet %s consumed %s" % (tabs, child.set_name, cur_word))                            
+                                logging.debug("%s*MATCH -> %s" % (tabs, cur_word))
+                                match_node.add_word(cur_word)
+                                if child.has_phrase(bot, clientid, phrase):
+                                    logging.debug("%sSet %s matched phrase %s" % (tabs, child.set_name, phrase))                                
+                                    word_no=cur_word_no
+                                    break
+                            else:
+                                break                    
+                    if not child.has_phrase(bot, clientid, phrase):
+                        logging.debug("%sSet %s did not find a full phrase match, continuing to the next child..." % (tabs, child.set_name))                        
+                        context.pop_match()
+                        continue
+
                 match = child.consume(bot, clientid, context, words, word_no + 1, type, depth+1)
                 if match is not None:
                     logging.debug("%sMatched child, success!" % (tabs))
                     return match
                 else:
-                    context.pop_match ()
+                    context.pop_match()
 
         if self._0ormore_arrow is not None:
             match = self._0ormore_arrow.consume(bot, clientid, context, words, word_no, type, depth+1)
