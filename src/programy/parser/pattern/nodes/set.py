@@ -55,6 +55,9 @@ class PatternSetNode(PatternWordNode):
 
     def is_full_phrase(self, bot, client, phrase):
         if bot.brain.sets.contains(self.set_name):
-            return bot.brain.sets.set(self.set_name).get(phrase, False)
+            if phrase is None:
+                return False
+            else:
+                return bot.brain.sets.set(self.set_name).get(phrase, False)
         else:
             return True

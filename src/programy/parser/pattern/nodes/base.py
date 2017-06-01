@@ -459,25 +459,28 @@ class PatternNode(object):
         if child.is_set():                
             tabs = TextUtils.get_tabs(word_no)
             phrase=words.word(word_no)
-            if not child.is_full_phrase(bot, clientid, phrase):
-                logging.debug("%sChild %s is a set [%s], trying to consume more words..." % (tabs, child._word, child.set_name))
-                phrase_words=[phrase]
-                for cur_word_no in range(word_no+1, words.num_words()):
-                    tabs = TextUtils.get_tabs(cur_word_no)                    
-                    cur_word=words.word(cur_word_no)
-                    phrase_words.append(cur_word)
-                    phrase=tuple(phrase_words)
-                    if child.equals(bot, clientid, phrase):
+            full_phrase=phrase if child.is_full_phrase(bot, clientid, phrase) else None
+            logging.debug("%sChild %s is a set [%s], trying to consume more words..." % (tabs, child._word, child.set_name))
+            phrase_words=[phrase]
+            for cur_word_no in range(word_no+1, words.num_words()):
+                tabs = TextUtils.get_tabs(cur_word_no)                    
+                cur_word=words.word(cur_word_no)
+                phrase_words.append(cur_word)
+                phrase=tuple(phrase_words)
+                if child.equals(bot, clientid, phrase):
+                    if child.is_full_phrase(bot, clientid, phrase):
                         logging.debug("%sSet %s consumed %s" % (tabs, child.set_name, cur_word))                            
                         logging.debug("%s*MATCH -> %s" % (tabs, cur_word))
-                        match_node.add_word(cur_word)
-                        if child.is_full_phrase(bot, clientid, phrase):
-                            logging.debug("%sSet %s matched phrase %s" % (tabs, child.set_name, phrase))                                
-                            word_no=cur_word_no
-                            break
+                        match_node.add_word(cur_word)                        
+                        full_phrase=phrase
                     else:
-                        break                    
-            if not child.is_full_phrase(bot, clientid, phrase):
+                        if full_phrase:
+                            logging.debug("%sSet %s matched phrase %s" % (tabs, child.set_name, full_phrase))                                
+                            word_no=cur_word_no-1
+                            break              
+                else:
+                    break                    
+            if not child.is_full_phrase(bot, clientid, full_phrase):
                 logging.debug("%sSet %s did not find a full phrase match, continuing to the next child..." % (tabs, child.set_name))                        
                 context.pop_match()
                 return None
