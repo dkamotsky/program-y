@@ -423,29 +423,11 @@ class PatternNode(object):
                 match_node = Match(type, child, words.word(word_no))
                 context.add_match(match_node)
 
-                if child.is_set():                    
-                    phrase=words.word(word_no)
-                    if not child.is_full_phrase(bot, clientid, phrase):
-                        logging.debug("%sChild %s is a set [%s], trying to consume more words..." % (tabs, child._word, child.set_name))
-                        phrase_words=[phrase]
-                        for cur_word_no in range(word_no+1, words.num_words()):
-                            cur_word=words.word(cur_word_no)
-                            phrase_words.append(cur_word)
-                            phrase=tuple(phrase_words)
-                            if child.equals(bot, clientid, phrase):
-                                logging.debug("%sSet %s consumed %s" % (tabs, child.set_name, cur_word))                            
-                                logging.debug("%s*MATCH -> %s" % (tabs, cur_word))
-                                match_node.add_word(cur_word)
-                                if child.is_full_phrase(bot, clientid, phrase):
-                                    logging.debug("%sSet %s matched phrase %s" % (tabs, child.set_name, phrase))                                
-                                    word_no=cur_word_no
-                                    break
-                            else:
-                                break                    
-                    if not child.is_full_phrase(bot, clientid, phrase):
-                        logging.debug("%sSet %s did not find a full phrase match, continuing to the next child..." % (tabs, child.set_name))                        
-                        context.pop_match()
-                        continue
+                skip_to=self.consume_set_phrase(bot, clientid, context, child, match_node, words, word_no)                
+                if skip_to is None:
+                    continue
+                else:
+                    word_no=skip_to
 
                 match = child.consume(bot, clientid, context, words, word_no + 1, type, depth+1)
                 if match is not None:
@@ -473,3 +455,32 @@ class PatternNode(object):
         logging.debug("%sNo match for %s, trying another path" % (tabs, words.word(word_no)))
         return None
 
+    def consume_set_phrase(self, bot, clientid, context, child, match_node, words, word_no):
+        if child.is_set():                
+            tabs = TextUtils.get_tabs(word_no)
+            phrase=words.word(word_no)
+            if not child.is_full_phrase(bot, clientid, phrase):
+                logging.debug("%sChild %s is a set [%s], trying to consume more words..." % (tabs, child._word, child.set_name))
+                phrase_words=[phrase]
+                for cur_word_no in range(word_no+1, words.num_words()):
+                    tabs = TextUtils.get_tabs(cur_word_no)                    
+                    cur_word=words.word(cur_word_no)
+                    phrase_words.append(cur_word)
+                    phrase=tuple(phrase_words)
+                    if child.equals(bot, clientid, phrase):
+                        logging.debug("%sSet %s consumed %s" % (tabs, child.set_name, cur_word))                            
+                        logging.debug("%s*MATCH -> %s" % (tabs, cur_word))
+                        match_node.add_word(cur_word)
+                        if child.is_full_phrase(bot, clientid, phrase):
+                            logging.debug("%sSet %s matched phrase %s" % (tabs, child.set_name, phrase))                                
+                            word_no=cur_word_no
+                            break
+                    else:
+                        break                    
+            if not child.is_full_phrase(bot, clientid, phrase):
+                logging.debug("%sSet %s did not find a full phrase match, continuing to the next child..." % (tabs, child.set_name))                        
+                context.pop_match()
+                return None
+        return word_no
+        
+        
