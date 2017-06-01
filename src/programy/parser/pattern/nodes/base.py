@@ -425,7 +425,7 @@ class PatternNode(object):
 
                 if child.is_set():                    
                     phrase=words.word(word_no)
-                    if not child.has_phrase(bot, clientid, phrase):
+                    if not child.is_full_phrase(bot, clientid, phrase):
                         logging.debug("%sChild %s is a set [%s], trying to consume more words..." % (tabs, child._word, child.set_name))
                         phrase_words=[phrase]
                         for cur_word_no in range(word_no+1, words.num_words()):
@@ -436,13 +436,13 @@ class PatternNode(object):
                                 logging.debug("%sSet %s consumed %s" % (tabs, child.set_name, cur_word))                            
                                 logging.debug("%s*MATCH -> %s" % (tabs, cur_word))
                                 match_node.add_word(cur_word)
-                                if child.has_phrase(bot, clientid, phrase):
+                                if child.is_full_phrase(bot, clientid, phrase):
                                     logging.debug("%sSet %s matched phrase %s" % (tabs, child.set_name, phrase))                                
                                     word_no=cur_word_no
                                     break
                             else:
                                 break                    
-                    if not child.has_phrase(bot, clientid, phrase):
+                    if not child.is_full_phrase(bot, clientid, phrase):
                         logging.debug("%sSet %s did not find a full phrase match, continuing to the next child..." % (tabs, child.set_name))                        
                         context.pop_match()
                         continue
