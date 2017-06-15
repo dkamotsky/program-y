@@ -18,8 +18,6 @@ import logging
 
 from programy.utils.text.text import TextUtils
 from programy.parser.pattern.matcher import Match
-#from programy.parser.pattern.nodes.topic import PatternTopicNode
-#from programy.parser.pattern.nodes.that import PatternThatNode
 
 #######################################################################################################################
 #
@@ -35,6 +33,7 @@ class PatternNode(object):
         self._0ormore_hash = None
         self._1ormore_underline = None
         self._children = []
+        self._children_words = {}
         self._0ormore_arrow = None
         self._1ormore_star = None
 
@@ -114,6 +113,9 @@ class PatternNode(object):
         return False
 
     def is_one_or_more(self):
+        return False
+
+    def is_word(self):
         return False
 
     ########################################################################
@@ -224,36 +226,44 @@ class PatternNode(object):
 
     def _node_exists(self, new_node):
 
-        for priority in self._priority_words:
-            if priority.equivalent(new_node):
-                # Equivalent node already exists, use this one instead
-                return priority
+        if new_node.is_priority():
+            for priority in self._priority_words:
+                if priority.equivalent(new_node):
+                    # Equivalent node already exists, use this one instead
+                    return priority
 
-        if self._0ormore_arrow is not None:
-            if self._0ormore_arrow.equivalent(new_node):
-                return self._0ormore_arrow
-        if self._0ormore_hash is not None:
-            if self._0ormore_hash.equivalent(new_node):
-                return self._0ormore_hash
+        if new_node.is_zero_or_more():
+            if self._0ormore_arrow is not None:
+                if self._0ormore_arrow.equivalent(new_node):
+                    return self._0ormore_arrow
+            if self._0ormore_hash is not None:
+                if self._0ormore_hash.equivalent(new_node):
+                    return self._0ormore_hash
 
-        if self._1ormore_underline is not None:
-            if self._1ormore_underline.equivalent(new_node):
-                return self._1ormore_underline
-        if self._1ormore_star is not None:
-            if self._1ormore_star.equivalent(new_node):
-                return self._1ormore_star
+        if new_node.is_one_or_more():
+            if self._1ormore_underline is not None:
+                if self._1ormore_underline.equivalent(new_node):
+                    return self._1ormore_underline
+            if self._1ormore_star is not None:
+                if self._1ormore_star.equivalent(new_node):
+                    return self._1ormore_star
 
-        if self._topic is not None:
-            if self._topic.equivalent(new_node):
-                return self._topic
+        if new_node.is_topic():
+            if self._topic is not None:
+                if self._topic.equivalent(new_node):
+                    return self._topic
 
-        if self._that is not None:
-            if self._that.equivalent(new_node):
-                return self._that
+        if new_node.is_that():
+            if self._that is not None:
+                if self._that.equivalent(new_node):
+                    return self._that
 
-        for child in self.children:
-            if child.equivalent(new_node):
-                return child
+        if new_node.is_word() or new_node.is_set() or new_node.is_bot():
+            try:
+                if new_node.word in self._children_words:
+                    return self._children_words[new_node.word]
+            except Exception as e:
+                logging.exception(e)
 
         return None
 
@@ -286,6 +296,8 @@ class PatternNode(object):
                self.children.append(new_node)
             else:
                 self.children.insert(0, new_node)
+                if new_node.is_word():
+                    self._children_words[new_node.word] = new_node
 
         return new_node
 
@@ -371,7 +383,6 @@ class PatternNode(object):
                 return match
             if words.word(word_no) == PatternNode.TOPIC:
                 logging.debug("%s Looking for a %s, none give, no match found!" % (tabs, PatternNode.TOPIC))
-                #context.pop_match()
                 return None
 
         if self._that is not None:
@@ -381,14 +392,11 @@ class PatternNode(object):
                 return match
             if words.word(word_no) == PatternNode.THAT:
                 logging.debug("%s Looking for a %s, none give, no match found!" % (tabs, PatternNode.THAT))
-                #context.pop_match()
                 return None
 
         for child in self._priority_words:
             if child.equals(bot, clientid, words.word(word_no)):
                 logging.debug("%sPriority %s matched %s" % (tabs, child._word, words.word(word_no)))
-
-                logging.debug("%sMATCH -> %s" % (tabs, words.word(word_no)))
                 match_node = Match(type, child, words.word(word_no))
                 context.add_match(match_node)
 
@@ -404,22 +412,16 @@ class PatternNode(object):
             if match is not None:
                 logging.debug("%sMatched 0 or more hash, success!" % (tabs))
                 return match
-            #else:
-            #    context.pop_match ()
 
         if self._1ormore_underline is not None:
             match = self._1ormore_underline.consume(bot, clientid, context, words, word_no, type, depth+1)
             if match is not None:
                 logging.debug("%sMatched 1 or more underline, success!" % (tabs))
                 return match
-            #else:
-            #    context.pop_match ()
 
         for child in self._children:
             if child.equals(bot, clientid, words.word(word_no)):
                 logging.debug("%sChild %s matched %s" % (tabs, child._word, words.word(word_no)))
-
-                logging.debug("%sMATCH -> %s" % (tabs, words.word(word_no)))
                 match_node = Match(type, child, words.word(word_no))
                 context.add_match(match_node)
 
@@ -441,16 +443,12 @@ class PatternNode(object):
             if match is not None:
                 logging.debug("%sMatched 0 or more arrow, success!" % (tabs))
                 return match
-            #else:
-            #    context.pop_match ()
 
         if self._1ormore_star is not None:
             match = self._1ormore_star.consume(bot, clientid, context, words, word_no, type, depth+1)
             if match is not None:
                 logging.debug("%sMatched 1 or more star, success!" % (tabs))
                 return match
-            #else:
-            #    context.pop_match ()
 
         logging.debug("%sNo match for %s, trying another path" % (tabs, words.word(word_no)))
         return None
