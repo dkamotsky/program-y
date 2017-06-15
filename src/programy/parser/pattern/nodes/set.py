@@ -25,14 +25,14 @@ class PatternSetNode(PatternWordNode):
 
     @property
     def set_name(self):
-        return self.word
+        return self._word
 
     def is_set(self):
         return True
 
     def equivalent(self, other):
-        if isinstance(other, PatternSetNode):
-            if self._word == other.word:
+        if other.is_set():
+            if self.set_name == other.set_name:
                 return True
         return False
 
@@ -40,7 +40,6 @@ class PatternSetNode(PatternWordNode):
         if self.set_name.upper() == 'NUMBER':
             return not isinstance(word, tuple) and word.isnumeric()
         elif bot.brain.sets.contains(self.set_name):
-            logging.debug("Looking for [%s] in set [%s]", word, self.set_name)
             set_words = bot.brain.sets.set(self.set_name)
             if word in set_words:
                 logging.debug("Found [%s] word [%s] in set [%s]" % ("EXACT" if set_words[word] else "PREFIX", word, self.set_name))
@@ -49,9 +48,9 @@ class PatternSetNode(PatternWordNode):
 
     def to_string(self, verbose=True):
         if verbose is True:
-            return "SET [%s] name=[%s]" % (self._child_count(verbose), self.word)
+            return "SET [%s] words=[%s]" % (self._child_count(verbose), self.word)
         else:
-            return "SET name=[%s]" % (self.word)
+            return "SET words=[%s]" % (self.word)
 
     def is_full_phrase(self, bot, client, phrase):
         if bot.brain.sets.contains(self.set_name):

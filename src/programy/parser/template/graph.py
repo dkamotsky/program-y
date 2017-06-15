@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 import logging
 
 from programy.parser.exceptions import ParserException
+from programy.parser.template.factory import TemplateNodeFactory
 from programy.parser.template.nodes.base import TemplateNode
 from programy.parser.template.nodes.word import TemplateWordNode
 from programy.parser.template.nodes.rand import TemplateRandomNode
@@ -70,8 +71,18 @@ from programy.parser.template.nodes.log import TemplateLogNode
 
 class TemplateGraph(object):
 
-    def __init__(self, aiml_parser=None):
+    def __init__(self, aiml_parser=None, template_factory=None):
         self._aiml_parser = aiml_parser
+        self.node_lookups = None
+
+        if template_factory is None:
+            logging.debug("Defaulting node factory to TemplateNodeFactory")
+            self._template_factory = TemplateNodeFactory()
+            self._template_factory.load_nodes_config_from_file("dummy_config.conf")
+        else:
+            if isinstance(template_factory, TemplateNodeFactory) is False:
+                raise ParserException("Template factory needs to be base class of TemplateNodeFactory" )
+            self._template_factory = template_factory
 
     #
     # TEMPLATE_EXPRESSION ::== TEXT | TAG_EXPRESSION | (TEMPLATE_EXPRESSION)*
@@ -131,108 +142,77 @@ class TemplateGraph(object):
         return None
 
     def parse_tag_expression(self, expression, branch):
-        if expression.tag == 'random':
-            self.parse_random_expression(expression, branch)
-        elif expression.tag == 'condition':
-            self.parse_condition_expression(expression, branch)
-        elif expression.tag == 'srai':
-            self.parse_srai_expression(expression, branch)
-        elif expression.tag == 'sraix':
-            self.parse_sraix_expression(expression, branch)
-        elif expression.tag == 'get':
-            self.parse_get_expression(expression, branch)
-        elif expression.tag == 'set':
-            self.parse_set_expression(expression, branch)
-        elif expression.tag == 'map':
-            self.parse_map_expression(expression, branch)
-        elif expression.tag == 'bot':
-            self.parse_bot_expression(expression, branch)
-        elif expression.tag == 'date':
-            self.parse_date_expression(expression, branch)
-        elif expression.tag == 'interval':
-            self.parse_interval_expression(expression, branch)
-        elif expression.tag == 'think':
-            self.parse_think_expression(expression, branch)
-        elif expression.tag == 'normalize':
-            self.parse_normalize_expression(expression, branch)
-        elif expression.tag == 'denormalize':
-            self.parse_denormalize_expression(expression, branch)
-        elif expression.tag == 'person':
-            self.parse_person_expression(expression, branch)
-        elif expression.tag == 'person2':
-            self.parse_person2_expression(expression, branch)
-        elif expression.tag == 'gender':
-            self.parse_gender_expression(expression, branch)
-        elif expression.tag == 'system':
-            self.parse_system_expression(expression, branch)
-        elif expression.tag == 'star':
-            self.parse_star_expression(expression, branch)
-        elif expression.tag == 'that':
-            self.parse_that_expression(expression, branch)
-        elif expression.tag == 'thatstar':
-            self.parse_thatstar_expression(expression, branch)
-        elif expression.tag == 'topicstar':
-            self.parse_topicstar_expression(expression, branch)
-        elif expression.tag == 'input':
-            self.parse_input_expression(expression, branch)
-        elif expression.tag == 'request':
-            self.parse_request_expression(expression, branch)
-        elif expression.tag == 'response':
-            self.parse_response_expression(expression, branch)
-        elif expression.tag == 'learn':
-            self.parse_learn_expression(expression, branch)
-        elif expression.tag == 'learnf':
-            self.parse_learnf_expression(expression, branch)
-        elif expression.tag == 'sr':
-            self.parse_sr_expression(expression, branch)
-        elif expression.tag == 'id':
-            self.parse_id_expression(expression, branch)
-        elif expression.tag == 'vocabulary':
-            self.parse_vocabulary_expression(expression, branch)
-        elif expression.tag == 'program':
-            self.parse_program_expression(expression, branch)
-        elif expression.tag == 'implode':
-            self.parse_implode_expression(expression, branch)
-        elif expression.tag == 'explode':
-            self.parse_explode_expression(expression, branch)
-        elif expression.tag == 'formal':
-            self.parse_formal_expression(expression, branch)
-        elif expression.tag == 'lowercase':
-            self.parse_lowercase_expression(expression, branch)
-        elif expression.tag == 'uppercase':
-            self.parse_uppercase_expression(expression, branch)
-        elif expression.tag == 'sentence':
-            self.parse_sentence_expression(expression, branch)
-        elif expression.tag == 'eval':
-            self.parse_eval_expression(expression, branch)
-        elif expression.tag == 'size':
-            self.parse_size_expression(expression, branch)
-        elif expression.tag == 'oob':
-            self.parse_oob_expression(expression, branch)
-        elif expression.tag == 'first':
-            self.parse_first_expression(expression, branch)
-        elif expression.tag == 'rest':
-            self.parse_rest_expression(expression, branch)
+        self.parse_tag_via_lookup(expression, branch)
 
-        # Tags found in Program-A reference implementation, but not documented in the spec !!! ffs
-        # addtriple
-        # deletetriple
-        # select
-        # uniq
-        # resetlearnf
-        # resetlearn
-        # search
+    #######################################################################################################
+    # Tags found in Program-A reference implementation, but not documented in the spec !!! ffs
+    # addtriple
+    # deletetriple
+    # select
+    # uniq
+    # resetlearnf
+    # resetlearn
+    # search
 
-        # This is tag not AIML 2.0 compliant
-        elif expression.tag == 'extension':
-            self.parse_extension_expression(expression, branch)
-        # This is tag not AIML 2.0 compliant
-        elif expression.tag == 'log':
-            self.parse_log_expression(expression, branch)
 
+    def load_node_lookups(self):
+        self.node_lookups = dict([
+            ('random', self.parse_random_expression),
+            ('condition', self.parse_condition_expression),
+            ('srai', self.parse_srai_expression),
+            ('sraix', self.parse_sraix_expression),
+            ('get', self.parse_get_expression),
+            ('set', self.parse_set_expression),
+            ('map', self.parse_map_expression),
+            ('bot', self.parse_bot_expression),
+            ('date', self.parse_date_expression),
+            ('interval', self.parse_interval_expression),
+            ('think', self.parse_think_expression),
+            ('normalize', self.parse_normalize_expression),
+            ('denormalize', self.parse_denormalize_expression),
+            ('person', self.parse_person_expression),
+            ('person2', self.parse_person2_expression),
+            ('gender', self.parse_gender_expression),
+            ('system', self.parse_system_expression),
+            ('star', self.parse_star_expression),
+            ('that', self.parse_that_expression),
+            ('thatstar', self.parse_thatstar_expression),
+            ('topicstar', self.parse_topicstar_expression),
+            ('input', self.parse_input_expression),
+            ('request', self.parse_request_expression),
+            ('response', self.parse_response_expression),
+            ('learn', self.parse_learn_expression),
+            ('learnf', self.parse_learnf_expression),
+            ('sr', self.parse_sr_expression),
+            ('id', self.parse_id_expression),
+            ('vocabulary', self.parse_vocabulary_expression),
+            ('program', self.parse_program_expression),
+            ('implode', self.parse_implode_expression),
+            ('explode', self.parse_explode_expression),
+            ('formal', self.parse_formal_expression),
+            ('lowercase', self.parse_lowercase_expression),
+            ('uppercase', self.parse_uppercase_expression),
+            ('sentence', self.parse_sentence_expression),
+            ('eval', self.parse_eval_expression),
+            ('size', self.parse_size_expression),
+            ('oob', self.parse_oob_expression),
+            ('first', self.parse_first_expression),
+            ('rest', self.parse_rest_expression),
+            ('extension', self.parse_extension_expression),
+            ('log', self.parse_log_expression)
+        ])
+
+    def parse_tag_via_lookup(self, expression, branch):
+        if self.node_lookups is None:
+            self.load_node_lookups()
+
+        if expression.tag in self.node_lookups:
+            method = self.node_lookups[expression.tag]
+            method(expression, branch)
         else:
             self.parse_unknown_as_text_node(expression, branch)
-            #raise ParserException("Error, unknown expression tag: <%s>" % (expression.tag), xml_element=expression)
+            # raise ParserException("Error, unknown expression tag: <%s>" % (expression.tag), xml_element=expression)
+
 
     #######################################################################################################
     # 	UNKNONWN NODE

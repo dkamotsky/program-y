@@ -27,24 +27,28 @@ class PatternWordNode(PatternNode):
         PatternNode.__init__(self)
         self._word = word
 
+    def is_word(self):
+        return True
+
     @property
     def word(self):
         return self._word
 
     def can_add(self, new_node):
-        if isinstance(new_node, PatternRootNode):
+        if new_node.is_root():
             raise ParserException("Cannot add root node to child node")
 
     def equivalent(self, other):
-        if isinstance(other, PatternWordNode):
+        if other.is_word():
             if self._word == other.word:
                 return True
         return False
 
     def equals(self, bot, clientid, word):
-        if self.word == word:
-            return True
-        return False
+        return self.equals_ignore_case(bot, clientid, self._word, word)
+        #if self.word == word:
+        #    return True
+        #return False
 
     def to_string(self, verbose=True):
         if verbose is True:

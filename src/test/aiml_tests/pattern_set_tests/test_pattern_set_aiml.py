@@ -10,8 +10,8 @@ class BasicTestClient(TestClient):
 
     def load_configuration(self, arguments):
         super(BasicTestClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(os.path.dirname(__file__), ".aiml", False)
-        self.configuration.brain_configuration._set_files = BrainFileConfiguration(os.path.dirname(__file__)+"/sets", ".txt", False)
+        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration._set_files = BrainFileConfiguration(files=os.path.dirname(__file__)+"/sets", extension=".txt")
 
 class PatternsetAIMLTests(unittest.TestCase):
 
@@ -21,3 +21,9 @@ class PatternsetAIMLTests(unittest.TestCase):
     def test_patten_set_match(self):
         response = PatternsetAIMLTests.test_client.bot.ask_question("test",  "MY FAVORITE COLOR IS RED")
         self.assertEqual(response, "RED IS A NICE COLOR.")
+
+    # TODO
+    # Uncomment this
+    # def test_patten_match_multi_word_set(self):
+    #    response = PatternsetAIMLTests.test_client.bot.ask_question("test",  "MY FAVORITE COLOR IS AIR FORCE BLUE")
+    #    self.assertEqual(response, "RED IS A NICE COLOR.")

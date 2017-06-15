@@ -11,7 +11,7 @@ class MapsTestsClient(TestClient):
 
     def load_configuration(self, arguments):
         super(MapsTestsClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(os.path.dirname(__file__), ".aiml", False)
+        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
 
 class MapsAIMLTests(unittest.TestCase):
 
@@ -36,5 +36,4 @@ class MapsAIMLTests(unittest.TestCase):
     def test_directions(self):
         response = MapsAIMLTests.test_client.bot.ask_question("testif", "DIRECTIONS EDINBURGH KINGHORN")
         self.assertIsNotNone(response)
-        print(response)
         self.assertTrue(response.startswith("To get there Head west on Leith St"))
