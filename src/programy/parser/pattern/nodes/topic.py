@@ -57,6 +57,10 @@ class PatternTopicNode(PatternNode):
             logging.error("%sMax search depth [%d]exceeded" % (tabs, context.max_search_depth))
             return None
 
+        if word_no >= len(words):
+            logging.error("%sword_no %d exceeded words size %d when matching Topic" % (word_no, len(words)))
+            return None            
+
         if words.word(word_no) == PatternTopicNode.TOPIC:
             logging.debug("%sTopic matched %s" % (tabs, words.word(word_no)))
             return super(PatternTopicNode, self).consume(bot, clientid, context, words, word_no+1, type, depth+1)
