@@ -57,8 +57,8 @@ class PatternTopicNode(PatternNode):
             logging.error("%sMax search depth [%d]exceeded" % (tabs, context.max_search_depth))
             return None
 
-        if word_no >= len(words):
-            logging.error("%sword_no %d exceeded words size %d when matching Topic" % (word_no, len(words)))
+        if word_no >= words.num_words():
+            logging.error("%sword_no %d exceeded words size %d when matching Topic" % (word_no, words.num_words()))
             return None            
 
         if words.word(word_no) == PatternTopicNode.TOPIC:
