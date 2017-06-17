@@ -196,11 +196,11 @@ class AIMLParser(object):
     #
 
     def handle_aiml_duplicate(self, dupe_excep, filename):
+        dupe_excep.filename = filename
+        msg = dupe_excep.format_message()
         if self._duplicates is not None:
-            dupe_excep.filename = filename
-            msg = dupe_excep.format_message()
             self._duplicates.append(msg + "\n")
-            logging.error(msg)
+        logging.error(msg)
 
     def handle_aiml_error(self, parser_excep, filename):
         parser_excep.filename = filename
@@ -225,11 +225,11 @@ class AIMLParser(object):
                     categories_found = True
 
                 except DuplicateGrammarException as dupe_excep:
-                    logging.info("Exception in topic %s", dupe_excep)
+                    logging.warning("Exception in topic %s", dupe_excep)
                     self.handle_aiml_duplicate(dupe_excep, filename)
 
                 except ParserException as parser_excep:
-                    logging.info("Exception in topic %s", parser_excep)
+                    logging.warning("Exception in topic %s", parser_excep)
                     self.handle_aiml_error(parser_excep, filename)
 
             elif expression.tag == 'category':
@@ -238,11 +238,11 @@ class AIMLParser(object):
                     categories_found = True
 
                 except DuplicateGrammarException as dupe_excep:
-                    logging.info("Exception in category %s", dupe_excep)
+                    logging.warning("Exception in category %s", dupe_excep)
                     self.handle_aiml_duplicate(dupe_excep, filename)
 
                 except ParserException as parser_excep:
-                    logging.info("Exception in category %s", parser_excep)
+                    logging.warning("Exception in category %s", parser_excep)
                     self.handle_aiml_error(parser_excep, filename)
 
             else:
