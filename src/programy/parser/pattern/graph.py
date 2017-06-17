@@ -206,7 +206,7 @@ class PatternGraph(object):
         current_node = self.add_that_to_node(that_element, current_node)
 
         if current_node.has_template():
-            raise DuplicateGrammarException("Duplicate grammar tree found [%s] with template [%s]" % (pattern_element.text, current_node.template.text))
+            raise DuplicateGrammarException("Duplicate grammar tree found [%s] with template [%s]" % (pattern_element.text, current_node.template.template))
         else:
             self.add_template_to_node(template_graph_root, current_node)
 
