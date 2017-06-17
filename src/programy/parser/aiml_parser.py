@@ -218,6 +218,7 @@ class AIMLParser(object):
 
         categories_found = False
         for expression in aiml_xml:
+            logging.info("File: %s; expression: %s", filename, expression)
             if expression.tag == 'topic':
                 try:
                     self.parse_topic(expression)
