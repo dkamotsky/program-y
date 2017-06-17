@@ -225,9 +225,11 @@ class AIMLParser(object):
                     categories_found = True
 
                 except DuplicateGrammarException as dupe_excep:
+                    logging.info("Exception in topic %s", dupe_excep)
                     self.handle_aiml_duplicate(dupe_excep, filename)
 
                 except ParserException as parser_excep:
+                    logging.info("Exception in topic %s", parser_excep)
                     self.handle_aiml_error(parser_excep, filename)
 
             elif expression.tag == 'category':
@@ -236,9 +238,11 @@ class AIMLParser(object):
                     categories_found = True
 
                 except DuplicateGrammarException as dupe_excep:
+                    logging.info("Exception in category %s", dupe_excep)
                     self.handle_aiml_duplicate(dupe_excep, filename)
 
                 except ParserException as parser_excep:
+                    logging.info("Exception in category %s", parser_excep)
                     self.handle_aiml_error(parser_excep, filename)
 
             else:
