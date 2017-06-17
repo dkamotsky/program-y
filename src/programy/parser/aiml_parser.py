@@ -244,9 +244,9 @@ class AIMLParser(object):
             else:
                 raise ParserException("Error, unknown top level tag, %s" % expression.tag, xml_element=expression)
 
-        if categories_found is False:
-            logging.warning("no categories in aiml file")
-            if self.stop_on_invalid is True:
+        if categories_found == False:
+            logging.warning("no categories in aiml file %s", filename)
+            if self.stop_on_invalid == True:
                 raise ParserException("Error, no categories in aiml file", filename=filename)
 
     #########################################################################################
