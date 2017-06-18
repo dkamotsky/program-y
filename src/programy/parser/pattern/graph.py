@@ -22,6 +22,7 @@ from programy.parser.pattern.factory import PatternNodeFactory
 from programy.parser.pattern.nodes.root import PatternRootNode
 from programy.parser.pattern.nodes.oneormore import PatternOneOrMoreWildCardNode
 from programy.parser.pattern.nodes.zeroormore import PatternZeroOrMoreWildCardNode
+from xml.etree.ElementTree import tostring
 
 # TODO better handling of <html> type tags
 
@@ -206,7 +207,7 @@ class PatternGraph(object):
         current_node = self.add_that_to_node(that_element, current_node)
 
         if current_node.has_template():
-            raise DuplicateGrammarException("Duplicate grammar tree found [%s] in [%s] with template [%s]" % (pattern_element.text, str(pattern_element), current_node.template.template.to_xml(None, None)))
+            raise DuplicateGrammarException("Duplicate grammar tree found [%s] in [%s] with template [%s]" % (pattern_element.text, tostring(pattern_element), current_node.template.template.to_xml(None, None)))
         else:
             self.add_template_to_node(template_graph_root, current_node)
 
