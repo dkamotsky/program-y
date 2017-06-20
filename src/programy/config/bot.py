@@ -24,9 +24,10 @@ class BotConfiguration(BaseConfigurationData):
     DEFAULT_ROOT                    = "."
     DEFAULT_PROMPT                  = ">>> "
     DEFAULT_RESPONSE                = "Sorry, I don't have an answer for that right now"
-    DEFAULT_EXIT_RESPONSE          = "Bye!"
-    DEFAULT_INITIAL_QUESTION       = "Hello"
-    DEFAULT_OVERRIDE_PREDICATES    = True
+    DEFAULT_EMPTY_STRING            = ""
+    DEFAULT_EXIT_RESPONSE           = "Bye!"
+    DEFAULT_INITIAL_QUESTION        = "Hello"
+    DEFAULT_OVERRIDE_PREDICATES     = True
 
     def __init__(self):
         self._license_keys          = None
@@ -35,7 +36,9 @@ class BotConfiguration(BaseConfigurationData):
         self._default_response      = BotConfiguration.DEFAULT_RESPONSE
         self._exit_response         = BotConfiguration.DEFAULT_EXIT_RESPONSE
         self._initial_question      = BotConfiguration.DEFAULT_INITIAL_QUESTION
+        self._empty_string          = BotConfiguration.DEFAULT_EMPTY_STRING
         self._override_predicates   = BotConfiguration.DEFAULT_OVERRIDE_PREDICATES
+        self._max_recursion         = 100
         BaseConfigurationData.__init__(self, "bot")
 
     def load_config_section(self, config_file, bot_root):
@@ -44,18 +47,22 @@ class BotConfiguration(BaseConfigurationData):
             self._license_keys = self._get_file_option(config_file, "license_keys", bot, bot_root)
             self._prompt = config_file.get_option(bot, "prompt", BotConfiguration.DEFAULT_PROMPT)
             self._default_response = config_file.get_option(bot, "default_response", BotConfiguration.DEFAULT_RESPONSE)
+            self._empty_string = config_file.get_option(bot, "empty_string", BotConfiguration.DEFAULT_EMPTY_STRING)
             self._exit_response = config_file.get_option(bot, "exit_response", BotConfiguration.DEFAULT_EXIT_RESPONSE)
             self._initial_question = config_file.get_option(bot, "initial_question", BotConfiguration.DEFAULT_INITIAL_QUESTION)
             self._override_predicates = config_file.get_option(bot, "override_predicates", BotConfiguration.DEFAULT_OVERRIDE_PREDICATES)
+            self._max_recursion = config_file.get_option(bot, "max_recursion", 100)
         else:
             logging.warning("Config section [%s] missing, using default values", self.section_name)
             self._license_keys          = None
             self.bot_root               = BotConfiguration.DEFAULT_ROOT
             self._prompt                = BotConfiguration.DEFAULT_PROMPT
             self._default_response      = BotConfiguration.DEFAULT_RESPONSE
+            self._empty_string          = BotConfiguration.DEFAULT_EMPTY_STRING
             self._exit_response         = BotConfiguration.DEFAULT_EXIT_RESPONSE
             self._initial_question      = BotConfiguration.DEFAULT_INITIAL_QUESTION
             self._override_predicates   = BotConfiguration.DEFAULT_OVERRIDE_PREDICATES
+            self._max_recursion         = 100
 
     @property
     def license_keys(self):
@@ -76,6 +83,14 @@ class BotConfiguration(BaseConfigurationData):
     @default_response.setter
     def default_response(self, text):
         self._default_response = text
+
+    @property
+    def empty_string(self):
+        return self._empty_string
+
+    @empty_string.setter
+    def empty_string(self, text):
+        self._empty_string = text
 
     @property
     def exit_response(self):
@@ -101,3 +116,6 @@ class BotConfiguration(BaseConfigurationData):
     def override_predicates(self, override):
         self._override_predicates = override
 
+    @property
+    def max_recursion(self):
+        return self._max_recursion

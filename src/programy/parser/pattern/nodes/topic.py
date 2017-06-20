@@ -39,7 +39,7 @@ class PatternTopicNode(PatternNode):
         return True
 
     def equivalent(self, other):
-        if isinstance(other, PatternTopicNode):
+        if other.is_topic():
             return True
         return False
 
@@ -56,6 +56,10 @@ class PatternTopicNode(PatternNode):
         if depth > context.max_search_depth:
             logging.error("%sMax search depth [%d]exceeded" % (tabs, context.max_search_depth))
             return None
+
+        if word_no >= words.num_words():
+            logging.warning("%sword_no %d exceeded words size %d when matching Topic", tabs, word_no, words.num_words())
+            return None            
 
         if words.word(word_no) == PatternTopicNode.TOPIC:
             logging.debug("%sTopic matched %s" % (tabs, words.word(word_no)))

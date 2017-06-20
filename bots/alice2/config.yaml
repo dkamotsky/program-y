@@ -7,11 +7,16 @@ brain:
     allow_learn_aiml: true
     allow_learnf_aiml: true
 
+    #dump_to_file: /tmp/alice2_braintree.txt
+
     files:
         aiml:
-            files: $BOT_ROOT/aiml
-            extension: .aiml
-            directories: false
+             files: $BOT_ROOT/aiml
+             #file: $BOT_ROOT/aiml/professor/professor.0001.aiml
+             extension: .aiml
+             directories: true
+             #errors: /tmp/alice2_errors.txt
+             #duplicates: /tmp/alice2_duplicates.txt
         sets:
             files: $BOT_ROOT/sets
             extension: .txt
@@ -47,6 +52,7 @@ bot:
     initial_question: Hi, how can I help you today?
     default_response: Sorry, I don't have an answer for that!
     exit_response: So long, and thanks for the fish!
+    max_recursion: 10
 
 rest:
   host: 0.0.0.0
