@@ -122,8 +122,8 @@ class BotClient(object):
         self.configuration = self.get_client_configuration()
         ConfigurationFactory.load_configuration_from_file(self.configuration, arguments.config_filename,
                                                           arguments.config_format, arguments.bot_root)
-        if self.config_override_filename:
-            print("Loading configuration overrides from [%s]" % self.config_override_filename)
+        if arguments.config_override_filename:
+            print("Loading configuration overrides from [%s]" % arguments.config_override_filename)
             ConfigurationFactory.load_configuration_from_file(self.configuration, arguments.config_override_filename,
                                                               arguments.config_format, arguments.bot_root)
             
