@@ -36,6 +36,7 @@ class ClientArguments(object):
         self.parser = argparse.ArgumentParser(description=client.get_description())
         self.parser.add_argument('--bot_root', dest='bot_root', help='root folder for all bot configuration data')
         self.parser.add_argument('--config', dest='config', help='configuration file location')
+        self.parser.add_argument('--config-override', dest='config_override', required=False, help='configuration file overrides location')
         self.parser.add_argument('--cformat', dest='cformat', help='configuration file format (yaml|json|ini)')
         self.parser.add_argument('--logging', dest='logging', help='logging configuration file')
         self.parser.add_argument('--noloop', dest='noloop', action='store_true', help='do not enter conversation loop')
@@ -59,6 +60,10 @@ class ClientArguments(object):
     @property
     def config_filename(self):
         return self.args.config
+
+    @property
+    def config_override_filename(self):
+        return self.args.config_override
 
     @property
     def config_format(self):
@@ -114,12 +119,14 @@ class BotClient(object):
         if arguments.bot_root is None:
             arguments.bot_root = os.path.dirname(arguments.config_filename)
             print("No bot root argument set, defaulting to [%s]" % arguments.bot_root)
-
         self.configuration = self.get_client_configuration()
-
         ConfigurationFactory.load_configuration_from_file(self.configuration, arguments.config_filename,
                                                           arguments.config_format, arguments.bot_root)
-
+        if self.config_override_filename:
+            print("Loading configuration overrides from [%s]" % self.config_override_filename)
+            ConfigurationFactory.load_configuration_from_file(self.configuration, arguments.config_override_filename,
+                                                              arguments.config_format, arguments.bot_root)
+            
     def initiate_bot(self, configuration):
         self._brain = Brain(configuration.brain_configuration)
         self.bot = Bot(self._brain, configuration.bot_configuration)
