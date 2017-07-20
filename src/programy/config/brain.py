@@ -144,42 +144,38 @@ class BrainConfiguration(BaseConfigurationData):
 
         brain = config_file.get_section(self.section_name)
         if brain is not None:
-            
-            is_override_services=config_file.get_option(brain, "override_services", False)
-            
-            if not is_override_services:            
-                self._supress_warnings = config_file.get_option(brain, "supress_warnings", BrainConfiguration.DEFAULT_SUPRESS_WARNINGS)
-                self._allow_system_aiml = config_file.get_option(brain, "allow_system_aiml", BrainConfiguration.DEFAULT_ALLOW_SYSTEM_AIML)
-                self._allow_learn_aiml = config_file.get_option(brain, "allow_learn_aiml", BrainConfiguration.DEFAULT_ALLOW_LEARN_AIML)
-                self._allow_learnf_aiml = config_file.get_option(brain, "allow_learnf_aiml", BrainConfiguration.DEFAULT_ALLOW_LEARNF_AIML)
-                self._allow_learnf_aiml = config_file.get_option(brain, "allow_learnf_aiml", BrainConfiguration.DEFAULT_ALLOW_LEARNF_AIML)
-                self._dump_to_file = config_file.get_option(brain, "dump_to_file", missing_value=None)
-    
-                files = config_file.get_section("files", brain)
-                if files is not None:
-                    aiml = config_file.get_section("aiml", files)
-                    self._aiml_files = self._get_brain_file_configuration(config_file, aiml, bot_root)
-    
-                    sets = config_file.get_section("sets", files)
-                    self._set_files = self._get_brain_file_configuration(config_file, sets, bot_root)
-    
-                    maps = config_file.get_section("maps", files)
-                    self._map_files = self._get_brain_file_configuration(config_file, maps, bot_root)
-    
-                    self._denormal = self._get_file_option(config_file, "denormal", files, bot_root)
-                    self._normal = self._get_file_option(config_file, "normal", files, bot_root)
-                    self._gender = self._get_file_option(config_file, "gender", files, bot_root)
-                    self._person = self._get_file_option(config_file, "person", files, bot_root)
-                    self._person2 = self._get_file_option(config_file, "person2", files, bot_root)
-                    self._predicates = self._get_file_option(config_file, "predicates", files, bot_root)
-                    self._pronouns = self._get_file_option(config_file, "pronouns", files, bot_root)
-                    self._properties = self._get_file_option(config_file, "properties", files, bot_root)
-                    self._triples = self._get_file_option(config_file, "triples", files, bot_root)
-                    self._preprocessors = self._get_file_option(config_file, "preprocessors", files, bot_root)
-                    self._postprocessors = self._get_file_option(config_file, "postprocessors", files, bot_root)
-                else:
-                    logging.warning("Config section [files] missing from Brain, default values not appropriate")
-                    raise Exception ("Config section [files] missing from Brain")
+            self._supress_warnings = config_file.get_option(brain, "supress_warnings", BrainConfiguration.DEFAULT_SUPRESS_WARNINGS)
+            self._allow_system_aiml = config_file.get_option(brain, "allow_system_aiml", BrainConfiguration.DEFAULT_ALLOW_SYSTEM_AIML)
+            self._allow_learn_aiml = config_file.get_option(brain, "allow_learn_aiml", BrainConfiguration.DEFAULT_ALLOW_LEARN_AIML)
+            self._allow_learnf_aiml = config_file.get_option(brain, "allow_learnf_aiml", BrainConfiguration.DEFAULT_ALLOW_LEARNF_AIML)
+            self._allow_learnf_aiml = config_file.get_option(brain, "allow_learnf_aiml", BrainConfiguration.DEFAULT_ALLOW_LEARNF_AIML)
+            self._dump_to_file = config_file.get_option(brain, "dump_to_file", missing_value=None)
+
+            files = config_file.get_section("files", brain)
+            if files is not None:
+                aiml = config_file.get_section("aiml", files)
+                self._aiml_files = self._get_brain_file_configuration(config_file, aiml, bot_root)
+
+                sets = config_file.get_section("sets", files)
+                self._set_files = self._get_brain_file_configuration(config_file, sets, bot_root)
+
+                maps = config_file.get_section("maps", files)
+                self._map_files = self._get_brain_file_configuration(config_file, maps, bot_root)
+
+                self._denormal = self._get_file_option(config_file, "denormal", files, bot_root)
+                self._normal = self._get_file_option(config_file, "normal", files, bot_root)
+                self._gender = self._get_file_option(config_file, "gender", files, bot_root)
+                self._person = self._get_file_option(config_file, "person", files, bot_root)
+                self._person2 = self._get_file_option(config_file, "person2", files, bot_root)
+                self._predicates = self._get_file_option(config_file, "predicates", files, bot_root)
+                self._pronouns = self._get_file_option(config_file, "pronouns", files, bot_root)
+                self._properties = self._get_file_option(config_file, "properties", files, bot_root)
+                self._triples = self._get_file_option(config_file, "triples", files, bot_root)
+                self._preprocessors = self._get_file_option(config_file, "preprocessors", files, bot_root)
+                self._postprocessors = self._get_file_option(config_file, "postprocessors", files, bot_root)
+            else:
+                logging.warning("Config section [files] missing from Brain, default values not appropriate")
+                raise Exception ("Config section [files] missing from Brain")
 
             services = config_file.get_section("services", brain)
             if services is not None:
@@ -188,6 +184,7 @@ class BrainConfiguration(BaseConfigurationData):
                 for name in service_keys:
                     service_data = config_file.get_section_data(name, services)
                     self._services.append(BrainServiceConfiguration(name, service_data))
+
             else:
                 logging.warning("Config section [services] missing from Brain, no services loaded")
         else:
