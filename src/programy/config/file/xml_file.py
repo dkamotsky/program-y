@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -19,23 +19,28 @@ import xml.etree.ElementTree as ET
 
 import logging
 from programy.config.file.file import BaseConfigurationFile
+from programy.config.programy import ProgramyConfiguration
 
 class XMLConfigurationFile(BaseConfigurationFile):
 
-    def __init__(self, client_config):
-        BaseConfigurationFile.__init__(self, client_config)
+    def __init__(self):
+        BaseConfigurationFile.__init__(self)
         self.xml_data = None
 
-    def load_from_text(self, text, bot_root):
+    def load_from_text(self, text, client_configuration, bot_root):
         tree = ET.fromstring(text)
         self.xml_data = tree
-        self.client_config.load_config_data(self, bot_root)
+        configuration = ProgramyConfiguration(client_configuration)
+        configuration.load_config_data(self, bot_root)
+        return configuration
 
-    def load_from_file(self, filename, bot_root):
+    def load_from_file(self, filename, client_configuration, bot_root):
+        configuration = ProgramyConfiguration(client_configuration)
         with open(filename, 'r+') as xml_data_file:
             tree = ET.parse(xml_data_file, parser=LineNumberingParser())
             self.xml_data = tree.getroot()
-            self.client_config.load_config_data(self, bot_root)
+            configuration.load_config_data(self, bot_root)
+        return configuration
 
     def get_section(self, section_name, parent_section=None):
         if parent_section is None:
@@ -43,32 +48,54 @@ class XMLConfigurationFile(BaseConfigurationFile):
         else:
             return parent_section.find(section_name)
 
-    def get_section_data(self, section_name, parent_section=None):
-        if parent_section is None:
-            section = self.xml_data.find(section_name)
-        else:
-            section = parent_section.find(section_name)
-        data = {}
-        for child in section:
-            data[child.tag] = child.text
-        return data
-
-    def get_child_section_keys(self, section_name, parent_section=None):
+    def get_keys(self, section):
         keys = []
-        if parent_section is None:
-            for child in self.xml_data.find(section_name):
-                keys.append(child.tag)
-        else:
-            for child in parent_section.find(section_name):
-                keys.append(child.tag)
+        for child in section:
+            keys.append(child.tag)
         return keys
+
+    def get_child_section_keys(self, section_name, parent_section):
+        found = parent_section.find(section_name)
+        if found is not None:
+            keys = []
+            for child in found:
+                keys.append(child.tag)
+            return keys
+        else:
+            return None
 
     def get_option(self, section, option_name, missing_value=None):
         child = section.find(option_name)
         if child is not None:
-            return self._infer_type_from_string(child.text)
+            if len(child._children) == 0:
+                return self._infer_type_from_string(child.text)
+            else:
+                return child
         else:
             if missing_value is not None:
                 logging.warning("Missing value for [%s] in config, return default value %s", option_name, missing_value)
             return missing_value
 
+    def _infer_type_from_string(self, text):
+        if text == 'True' or text == 'true':
+            return True
+        elif text == 'False' or text == 'false':
+            return False
+        else:
+            return text
+
+    def get_bool_option(self, section, option_name, missing_value=False):
+        child = section.find(option_name)
+        if child is not None:
+            return self.convert_to_bool(child.text)
+        else:
+            logging.warning("Missing value for [%s] in config, return default value %s", option_name, missing_value)
+            return missing_value
+
+    def get_int_option(self, section, option_name, missing_value=0):
+        child = section.find(option_name)
+        if child is not None:
+            return self.convert_to_int(child.text)
+        else:
+            logging.warning("Missing value for [%s] in config, return default value %d", option_name, missing_value)
+            return missing_value

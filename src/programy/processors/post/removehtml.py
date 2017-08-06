@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -27,5 +27,6 @@ class RemoveHTMLPostProcessor(PostProcessor):
 
     def process(self, bot, clientid, word_string):
         logging.debug("Removing html from sentence...")
-        word_string = re.sub(r'<\s*br\s*/>\s*', os.linesep, word_string)
+        word_string = re.sub(r'\s*<\s*br\s*/>\s*', os.linesep, word_string)
+        word_string = re.sub(r'\s*<br></br>\s*', os.linesep, word_string)
         return word_string

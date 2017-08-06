@@ -2,16 +2,12 @@ import unittest
 
 from programy.clients.console import ConsoleBotClient
 
-def mock_input(question):
-    return question
+from test.clients.arguments import MockArgumentParser
 
 class ConsoleBotClientTests(unittest.TestCase):
 
-    def test_init(self):
+    def test_console_client(self):
+        arguments = MockArgumentParser()
+        client = ConsoleBotClient(arguments)
+        self.assertIsNotNone(client)
 
-        #console_app = ConsoleBotClient()
-        #self.assertIsNotNone(console_app)
-
-        #response = console_app.get_question(mock_input("question"))
-        #self.assertEquals(response, "question")
-        pass

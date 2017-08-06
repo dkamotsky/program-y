@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -42,8 +42,17 @@ class TemplateSentenceNode(TemplateNode):
 
     def to_xml(self, bot, clientid):
         xml = "<sentence>"
-        for child in self.children:
-            xml += child.to_xml(bot, clientid)
+        xml += self.children_to_xml(bot, clientid)
         xml += "</sentence>"
         return xml
+
+    #######################################################################################################
+    # <sentence>ABC</sentence>
+
+    def add_default_star(self):
+        return True
+
+    def parse_expression(self, graph, branch):
+        self._parse_node(graph, branch)
+
 

@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -26,4 +26,6 @@ class PatternNodeFactory(NodeFactory):
     def default_config_file(self):
         return os.path.dirname(__file__) + os.sep + "pattern_nodes.conf"
 
-
+    def get_root_node(self):
+        root_class = self.new_node_class('root')
+        return root_class()

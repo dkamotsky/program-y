@@ -1,7 +1,7 @@
 import unittest
 import os
 from test.aiml_tests.client import TestClient
-from programy.config.brain import BrainFileConfiguration
+from programy.config.sections.brain.file import BrainFileConfiguration
 
 
 class MapsTestsClient(TestClient):
@@ -11,16 +11,16 @@ class MapsTestsClient(TestClient):
 
     def load_configuration(self, arguments):
         super(MapsTestsClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration.files.aiml_files._files = files=os.path.dirname(__file__)
 
 class MapsAIMLTests(unittest.TestCase):
 
     def setUp (self):
         MapsAIMLTests.test_client = MapsTestsClient()
 
-        latlong     = os.path.dirname(__file__) + "/google_latlong.json"
-        distance    = os.path.dirname(__file__) + "/distance.json"
-        directions  = os.path.dirname(__file__) + "/directions.json"
+        latlong     = os.path.dirname(__file__) +  os.sep + "google_latlong.json"
+        distance    = os.path.dirname(__file__) +  os.sep + "distance.json"
+        directions  = os.path.dirname(__file__) +  os.sep + "directions.json"
 
         MapsAIMLTests.test_client.bot.license_keys.load_license_key_data("""
         GOOGLE_LATLONG=%s

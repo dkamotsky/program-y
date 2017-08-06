@@ -1,9 +1,7 @@
 import unittest
 import os
 from test.aiml_tests.client import TestClient
-from programy.config.brain import BrainFileConfiguration
-
-# TODO <that><topic> can take single "1" and double "1,2" indexes
+from programy.config.sections.brain.file import BrainFileConfiguration
 
 class ThatTestClient(TestClient):
 
@@ -12,7 +10,8 @@ class ThatTestClient(TestClient):
 
     def load_configuration(self, arguments):
         super(ThatTestClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration.files.aiml_files._files=os.path.dirname(__file__)
+
 
 class ThatAIMLTests(unittest.TestCase):
 
@@ -45,3 +44,29 @@ class ThatAIMLTests(unittest.TestCase):
         response = ThatAIMLTests.test_client.bot.ask_question("test", "NO")
         self.assertIsNotNone(response)
         self.assertEqual(response, 'REALLY? I HAVE A HARD TIME DRINKING BLACK COFFEE.')
+
+    def test_that_case(self):
+        response = ThatAIMLTests.test_client.bot.ask_question("test", "CASE HELLO1")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'CASE HI THERE')
+
+        response = ThatAIMLTests.test_client.bot.ask_question("test", "CASE HELLO AGAIN")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'CASE HELLO RESPONSE')
+
+        response = ThatAIMLTests.test_client.bot.ask_question("test", "CASE HELLO2")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'Case Hi There')
+
+        response = ThatAIMLTests.test_client.bot.ask_question("test", "CASE HELLO AGAIN")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'CASE HELLO RESPONSE')
+
+    def test_multiple_sentenes(self):
+        response = ThatAIMLTests.test_client.bot.ask_question("test", "START")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'This is sentence 1. This is sentence two.')
+
+        response = ThatAIMLTests.test_client.bot.ask_question("test", "CONTINUE")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'TEST PASS')

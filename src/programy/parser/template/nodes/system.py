@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -17,10 +17,8 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 import logging
 import subprocess
 
-
 from programy.parser.exceptions import ParserException
 from programy.parser.template.nodes.atttrib import TemplateAttribNode
-
 
 
 class TemplateSystemNode(TemplateAttribNode):
@@ -39,7 +37,7 @@ class TemplateSystemNode(TemplateAttribNode):
 
     def resolve(self, bot, clientid):
         try:
-            if bot.brain.configuration.allow_system_aiml is True:
+            if bot.brain.configuration.overrides.allow_system_aiml is True:
                 command = self.resolve_children_to_string(bot, clientid)
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 result = []
@@ -71,7 +69,16 @@ class TemplateSystemNode(TemplateAttribNode):
         if self._timeout != 0:
             xml += ' timeout="%d"' % self._timeout
         xml += ">"
-        for child in self.children:
-            xml += child.to_xml(bot, clientid)
+        xml += self.children_to_xml(bot, clientid)
         xml += "</system>"
         return xml
+
+    #######################################################################################################
+    # SYSTEM_EXPRESSION ::==
+    # 		<system( TIMEOUT_ATTRIBUTE)>TEMPLATE_EXPRESSION</system> |
+    #  		<system><timeout>TEMPLATE_EXPRESSION</timeout></system>
+    # TIMEOUT_ATTRIBUTE :== timeout=”NUMBER”
+
+    def parse_expression(self, graph, expression):
+        self._parse_node_with_attrib(graph, expression, "timeout", "0")
+

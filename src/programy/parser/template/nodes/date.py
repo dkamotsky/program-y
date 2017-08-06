@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -58,7 +58,19 @@ class TemplateDateNode(TemplateAttribNode):
 
     def to_xml(self, bot, clientid):
         xml = '<date format="%s" >' % self._format
-        for child in self.children:
-            xml += child.to_xml(bot, clientid)
+        xml += self.children_to_xml(bot, clientid)
         xml += "</date>"
         return xml
+
+    #######################################################################################################
+    # DATE_ATTRIBUTES ::== (format="LISP_DATE_FORMAT") | (jformat="JAVA DATE FORMAT")
+    # DATE_ATTRIBUTE_TAG ::== <format>TEMPLATE_EXPRESSION</format> | <jformat>TEMPLATE_EXPRESSION</jformat>
+    # DATE_EXPRESSION ::== <date( DATE_ATTRIBUTES)*/> | <date>(DATE_ATTRIBUTE_TAG)</date>
+    # Pandorabots supports three extension attributes to the date element in templates:
+    #     	locale
+    #       format
+    #       timezone
+
+    def parse_expression(self, graph, expression):
+        self._parse_node_with_attrib(graph, expression, "format", "%c")
+

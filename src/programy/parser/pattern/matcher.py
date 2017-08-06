@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -16,7 +16,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 import logging
 from programy.dialog import Sentence
-
+import datetime
 
 class Match(object):
 
@@ -66,16 +66,36 @@ class Match(object):
 
 class MatchContext(object):
 
-    MAX_SEARCH_DEPTH = 10000
-
-    def __init__(self, max_search_depth=MAX_SEARCH_DEPTH):
+    def __init__(self, max_search_depth, max_search_timeout):
         self._matched_nodes = []
         self._template_node = None
         self._max_search_depth = max_search_depth
+        self._max_search_timeout = max_search_timeout
+        self._total_search_start = datetime.datetime.now()
 
     @property
     def max_search_depth(self):
         return self._max_search_depth
+
+    def search_depth_exceeded(self, depth):
+        if self._max_search_depth == -1:
+            return False
+        else:
+            return bool(depth > self._max_search_depth)
+
+    @property
+    def max_search_timeout(self):
+        return self._max_search_timeout
+
+    def total_search_time(self):
+        delta = datetime.datetime.now() - self._total_search_start
+        return abs(delta.total_seconds())
+
+    def search_time_exceeded(self):
+        if self._max_search_timeout == -1:
+            return False
+        else:
+            return bool(self.total_search_time() > self._max_search_timeout)
 
     def add_match(self, match):
         self._matched_nodes.append(match)
@@ -110,6 +130,7 @@ class MatchContext(object):
             if match._match_type == type and \
                 ( match._matched_node.is_wildcard() or
                   match._matched_node.is_set() or
+                  match._matched_node.is_iset() or
                   match._matched_node.is_bot()):
                 if count == index:
                     return match.joined_words()
@@ -137,3 +158,23 @@ class MatchContext(object):
             output_func("\tT - None")
 
 
+class EqualsMatch(object):
+    def __init__(self, matched, word_no, matched_phrase=None):
+        self._matched = matched
+        self._word_no = word_no
+        self._matched_phrase = matched_phrase
+
+    @property
+    def matched(self):
+        return self._matched
+
+    @property
+    def word_no(self):
+        return self._word_no
+
+    @property
+    def matched_phrase(self):
+        return self._matched_phrase
+
+    def to_string(self):
+        return "%s, %d, %s"%(self._matched, self._word_no, self.matched_phrase)

@@ -3,8 +3,9 @@ import csv
 import re
 import datetime
 
-from programy.clients.clients import BotClient
+from programy.clients.client import BotClient
 from programy.utils.files.filefinder import FileFinder
+from programy.config.sections.client.console import ConsoleConfiguration
 
 class TestQuestion(object):
 
@@ -90,6 +91,7 @@ class TestFileFileFinder(FileFinder):
             for row in csvreader:
                 if self.empty_row(row) is False:
                     question = row[0]
+                    #print("{", question, "}")
                     if self.is_comment(question) is False:
                         if self.is_template(question) is True:
                             self.add_answers_to_template(row, question, templates)
@@ -134,11 +136,14 @@ class TestRunnerBotClient(BotClient):
     def set_environment(self):
         self.bot.brain.predicates.pairs.append(["env", "TestRunner"])
 
+    def get_client_configuration(self):
+        return ConsoleConfiguration()
+
     def run(self):
         file_finder = TestFileFileFinder()
         if self.test_dir is not None:
             print ("Loading Tests from directory [%s]" % self.test_dir)
-            collection = file_finder.load_dir_contents(self.test_dir, extension=".aiml_tests", subdir=True)
+            collection = file_finder.load_dir_contents(self.test_dir, extension=".tests", subdir=True)
         else:
             collection = file_finder.load_single_file_contents(self.test_file)
 

@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -13,25 +13,25 @@ THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRI
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
+
 import logging
 from flask import Flask, jsonify, request, make_response, abort
 
-from programy.clients.clients import BotClient
-from programy.config.client.rest import RestClientConfiguration
+from programy.clients.client import BotClient
+from programy.config.sections.client.rest import RestConfiguration
 
 class RestBotClient(BotClient):
 
-    def __init__(self):
-        BotClient.__init__(self)
+    def __init__(self, argument_parser=None):
+        BotClient.__init__(self, argument_parser)
 
     def set_environment(self):
         self.bot.brain.predicates.pairs.append(["env", "REST"])
 
     def get_client_configuration(self):
-        return RestClientConfiguration()
+        return RestConfiguration()
 
-print("Loading, please wait...")
-rest_client = RestBotClient()
+rest_client = None
 
 print("Initiating REST Service...")
 app = Flask(__name__)
@@ -54,7 +54,7 @@ def is_apikey_valid(apikey):
 @app.route('/api/v1.0/ask', methods=['GET'])
 def ask():
 
-    if rest_client.configuration.rest_configuration.use_api_keys is True:
+    if rest_client.configuration.client_configuration.use_api_keys is True:
         if 'apikey' not in request.args or request.args['apikey'] is None:
             logging.error("Unauthorised access - api required but missing")
             return make_response(jsonify({'error': 'Unauthorized access'}), 401)
@@ -106,14 +106,19 @@ def ask():
 
 if __name__ == '__main__':
 
+    print("Loading, please wait...")
+    rest_client = RestBotClient()
+
     def run():
-        print("REST Client running on %s:%s" % (rest_client.configuration.rest_configuration.host,
-                                                rest_client.configuration.rest_configuration.port))
-        if rest_client.configuration.rest_configuration.debug is True:
+
+        print("REST Client running on %s:%s" % (rest_client.configuration.client_configuration.host,
+                                                rest_client.configuration.client_configuration.port))
+
+        if rest_client.configuration.client_configuration.debug is True:
             print("REST Client running in debug mode")
 
-        app.run(host=rest_client.configuration.rest_configuration.host,
-                port=rest_client.configuration.rest_configuration.port,
-                debug=rest_client.configuration.rest_configuration.debug)
+        app.run(host=rest_client.configuration.client_configuration.host,
+                port=rest_client.configuration.client_configuration.port,
+                debug=rest_client.configuration.client_configuration.debug)
 
     run()

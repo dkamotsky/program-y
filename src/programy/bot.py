@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -15,10 +15,12 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 """
 
 import logging
+import datetime
 
 from programy.dialog import Conversation, Question
-from programy.config.bot import BotConfiguration
+from programy.config.sections.bot.bot import BotConfiguration
 from programy.utils.license.keys import LicenseKeys
+from programy.utils.classes.loader import ClassLoader
 
 class Bot(object):
 
@@ -26,9 +28,40 @@ class Bot(object):
         self._brain = brain
         self._configuration = config
         self._conversations = {}
-        self._license_keys = LicenseKeys()
-        self._load_license_keys(self._configuration)
         self._question_depth = 0
+        self._question_start_time = None
+
+        self.load_license_keys()
+
+        self.initiate_spellchecker()
+
+    @property
+    def configuration(self):
+        return self._configuration
+
+    def load_license_keys(self):
+        self._license_keys = LicenseKeys()
+        if self._configuration is not None:
+            self._load_license_keys(self._configuration)
+        else:
+            logging.warning("No configuration defined when loading license keys")
+
+    def initiate_spellchecker(self):
+        self._spell_checker = None
+        if self._configuration is not None:
+            if self._configuration.spelling.classname is not None:
+                try:
+                    logging.info("Loading spelling checker from class [%s]"%self._configuration.spelling.classname)
+                    spell_class = ClassLoader.instantiate_class(self._configuration.spelling.classname)
+                    self._spell_checker = spell_class(self._configuration.spelling)
+                except Exception as e:
+                    logging.exception(e)
+            else:
+                logging.warning("No configuration setting for spelling checker!")
+
+    @property
+    def spell_checker(self):
+        return self._spell_checker
 
     @property
     def brain(self):
@@ -78,7 +111,10 @@ class Bot(object):
 
     @property
     def override_predicates(self):
-        return self._configuration.override_predicates
+        if self._configuration is not None:
+            return self._configuration.override_predicates
+        else:
+            return False
 
     @property
     def get_version_string(self):
@@ -106,6 +142,37 @@ class Bot(object):
             self._conversations[clientid] = conversation
             return conversation
 
+    def check_max_recursion(self):
+        if self._configuration.max_question_recursion != -1:
+            if self._question_depth > self._configuration.max_question_recursion:
+                raise Exception ("Maximum recursion limit [%d] exceeded"%(self._configuration.max_question_recursion))
+
+    def total_search_time(self):
+        delta = datetime.datetime.now() - self._question_start_time
+        return abs(delta.total_seconds())
+
+    def check_max_timeout(self):
+        if self._configuration.max_question_timeout != -1:
+            if self.total_search_time() > self._configuration.max_question_timeout:
+                raise Exception ("Maximum search time limit [%d] exceeded"%(self._configuration.max_question_timeout))
+
+    def check_spelling_before(self, each_sentence):
+        if self._configuration.spelling.check_before is True:
+            text = each_sentence.text()
+            corrected = self.spell_checker.correct(text)
+            logging.debug ("Spell Checker corrected [%s] to [%s]"%(text, corrected))
+            each_sentence.replace_words(corrected)
+
+    def check_spelling_and_retry(self, clientid, each_sentence):
+        if self._configuration.spelling.check_and_retry is True:
+            text = each_sentence.text()
+            corrected = self.spell_checker.correct(text)
+            logging.debug("Spell Checker corrected [%s] to [%s]" % (text, corrected))
+            each_sentence.replace_words(corrected)
+            response = self.brain.ask_question(self, clientid, each_sentence)
+            return response
+        return None
+
     def ask_question(self, clientid: str, text: str, srai=False):
 
         logging.debug("Question (%s): %s", clientid, text)
@@ -121,18 +188,31 @@ class Bot(object):
 
         conversation = self.get_conversation(clientid)
 
-        question = Question.create_from_text(pre_processed)
+        if srai is False:
+            question = Question.create_from_text(pre_processed)
+        else:
+            question = Question.create_from_text(pre_processed, split=False)
 
         conversation.record_dialog(question)
+
+        if self._question_depth == 0:
+            self._question_start_time = datetime.datetime.now()
+        self._question_depth += 1
 
         answers = []
         for each_sentence in question.sentences:
 
-            self._question_depth += 1
-            if self._question_depth > self._configuration.max_recursion:
-                raise Exception ("Maximum recursion limit [%d] exceeded"%(self._configuration.max_recursion))
+            self.check_max_recursion()
+
+            self.check_max_timeout()
+
+            self.check_spelling_before(each_sentence)
 
             response = self.brain.ask_question(self, clientid, each_sentence)
+
+            if response is None:
+                response = self.check_spelling_and_retry(clientid, each_sentence)
+
             if response is not None:
                 logging.debug("Raw Response (%s): %s", clientid, response)
                 each_sentence.response = response
@@ -150,7 +230,7 @@ class Bot(object):
                 each_sentence.response = self.default_response
                 answers.append(self.default_response)
 
-            self._question_depth = 0
+        self._question_depth = 0
 
         if srai is True:
             conversation.pop_dialog()

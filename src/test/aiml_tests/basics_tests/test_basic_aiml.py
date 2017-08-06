@@ -3,7 +3,7 @@ import os
 import logging
 
 from test.aiml_tests.client import TestClient
-from programy.config.brain import BrainFileConfiguration
+from programy.config.sections.brain.file import BrainFileConfiguration
 
 class BasicTestClient(TestClient):
 
@@ -12,19 +12,18 @@ class BasicTestClient(TestClient):
 
     def load_configuration(self, arguments):
         super(BasicTestClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration.files.aiml_files._files = os.path.dirname(__file__)
 
 class BasicAIMLTests(unittest.TestCase):
 
     def setUp(self):
         BasicAIMLTests.test_client = BasicTestClient()
 
-    def test_basic_no_response(self):
+    def test_basic_basic_text(self):
         response = BasicAIMLTests.test_client.bot.ask_question("test",  "NO RESPONSE")
         self.assertEqual(response, '')
 
     def test_basic_one_word(self):
-        BasicAIMLTests.test_client.dump_bot_brain_tree()
         response = BasicAIMLTests.test_client.bot.ask_question("test",  "HELLO")
         self.assertEqual(response, "HELLO, WORLD")
 

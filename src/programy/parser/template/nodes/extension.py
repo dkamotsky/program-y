@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -18,6 +18,7 @@ import logging
 
 from programy.utils.classes.loader import ClassLoader
 from programy.parser.template.nodes.base import TemplateNode
+from programy.utils.text.text import TextUtils
 
 
 ######################################################################################################################
@@ -41,12 +42,11 @@ class TemplateExtensionNode(TemplateNode):
             data = self.resolve_children_to_string(bot, clientid)
 
             new_class = ClassLoader.instantiate_class(self._path)
-            if new_class is not None:
-                instance = new_class()
-                resolved = instance.execute(bot, clientid, data)
+            instance = new_class()
+            resolved = instance.execute(bot, clientid, data)
 
-                logging.debug("[%s] resolved to [%s]", self.to_string(), resolved)
-                return resolved
+            logging.debug("[%s] resolved to [%s]", self.to_string(), resolved)
+            return resolved
 
         except Exception as excep:
             logging.exception(excep)
@@ -59,8 +59,32 @@ class TemplateExtensionNode(TemplateNode):
         xml = '<extension'
         xml += ' path="%s"' % self._path
         xml += '>'
-        for child in self.children:
-            xml += child.to_xml(bot, clientid)
+        xml += self.children_to_xml(bot, clientid)
         xml += '</extension>'
         return xml
+
+    #######################################################################################################
+    # EXTENSION_EXPRESSION ::== <extension>
+    #                               <path>programy.etension.SomeModule</path>
+    #                               parameters
+    # 						</extension>
+
+    def parse_expression(self, graph, expression):
+
+        if 'path' in expression.attrib:
+            self.path = expression.attrib['path']
+
+        head_text = self.get_text_from_element(expression)
+        self.parse_text(graph, head_text)
+
+        for child in expression:
+            tag_name = TextUtils.tag_from_text(child.tag)
+
+            if tag_name == 'path':
+                self.path = self.get_text_from_element(child)
+            else:
+                graph.parse_tag_expression(child, self)
+
+            tail_text = self.get_tail_from_element(child)
+            self.parse_text(graph, tail_text)
 

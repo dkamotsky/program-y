@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -58,9 +58,9 @@ class NodeFactory(object):
 
         return True
 
-    def load_nodes_config_from_file(self, filename):
+    def load_nodes_config_from_file(self, filename=None):
         try:
-            if os.path.exists(filename) is False:
+            if filename is None or os.path.exists(filename) is False:
                 filename = self.default_config_file()
 
             with open(filename, "r+") as node_file:

@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -25,10 +25,6 @@ class ParserException(Exception):
     @property
     def message(self):
         return self._message
-
-    @message.setter
-    def message(self, message):
-        self._message = message
 
     @property
     def filename(self):
@@ -61,7 +57,8 @@ class ParserException(Exception):
             msg += " in [%s]" % self._filename
 
         if self._xml_exception is not None:
-            if str(self._xml_exception):
+            if isinstance(self._xml_exception, str):
+                msg += " : "
                 msg += self._xml_exception
             else:
                 msg += " at [line(%d), column(%d)]" % (self._xml_exception.position[0],
@@ -73,11 +70,13 @@ class ParserException(Exception):
                                                        self._xml_element._end_column_number)
         return msg
 
+
 class DuplicateGrammarException(ParserException):
     def __init__(self, message, filename=None, xml_exception=None, xml_element=None):
         ParserException.__init__(self, message, filename=filename, xml_exception=xml_exception, xml_element=xml_element)
 
+
 class MatcherException(Exception):
     def __init__(self, message):
-        Exception.__init__(message)
+        Exception.__init__(self, message)
         self.message = message

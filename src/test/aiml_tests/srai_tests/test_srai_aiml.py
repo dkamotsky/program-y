@@ -1,8 +1,7 @@
 import unittest
 import os
 from test.aiml_tests.client import TestClient
-from programy.config.brain import BrainFileConfiguration
-import logging
+from programy.config.sections.brain.file import BrainFileConfiguration
 
 class SraiTestClient(TestClient):
 
@@ -11,7 +10,7 @@ class SraiTestClient(TestClient):
 
     def load_configuration(self, arguments):
         super(SraiTestClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration.files.aiml_files._files = os.path.dirname(__file__)
 
 class SraiAIMLTests(unittest.TestCase):
 
@@ -70,7 +69,6 @@ class SraiAIMLTests(unittest.TestCase):
         self.assertEqual('0', response)
 
     def test_xxlength_1char_string(self):
-        SraiAIMLTests.test_client.dump_bot_brain_tree()
         response = SraiAIMLTests.test_client.bot.ask_question("test", "XXLENGTH X XS 0")
         self.assertIsNotNone(response)
         self.assertEqual('1', response)

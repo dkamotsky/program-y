@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -29,10 +29,13 @@ class ProcessorLoader(ClassLoader):
         count = 0
         with open(filename, "r+") as file:
             for line in file:
-                new_class = ClassLoader.instantiate_class(line)
-                if new_class is not None:
-                    self.processors.append(new_class(*args, **kw))
-                    count += 1
+                line = line.strip()
+                if len(line) > 0:
+                    if line[0] != '#':
+                        new_class = ClassLoader.instantiate_class(line)
+                        if new_class is not None:
+                            self.processors.append(new_class(*args, **kw))
+                            count += 1
         return count
 
     def process(self, bot, clientid, string):

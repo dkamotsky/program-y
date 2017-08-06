@@ -1,11 +1,28 @@
-import logging
-import time
+"""
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
+"""
+Current commented out so that I do  not have to include fbmessenger in the list of dependencies
+
 from flask import Flask, request
 
 from fbmessenger import BaseMessenger
 
-from programy.clients.clients import BotClient
-from programy.config.client.facebook import FacebookClientConfiguration
+from programy.clients.client import BotClient
+from programy.config.sections.client.facebook import FacebookConfiguration
 
 # This uses https://ngrok.com/ to create a secure tunnel to localhost
 # Required by facebook to send message notifications
@@ -38,14 +55,14 @@ class FacebookMessenger(BaseMessenger):
 
 class FacebookBotClient(BotClient):
 
-    def __init__(self):
-        BotClient.__init__(self)
+    def __init__(self, argument_parser=None):
+        BotClient.__init__(self, argument_parser)
 
     def set_environment(self):
         self.bot.brain.predicates.pairs.append(["env", "Facebook"])
 
     def get_client_configuration(self):
-        return FacebookClientConfiguration()
+        return FacebookConfiguration()
 
     def run(self):
 
@@ -57,9 +74,7 @@ class FacebookBotClient(BotClient):
 app = Flask(__name__)
 app.debug = True
 
-twitter_app = FacebookBotClient()
-twitter_app.run()
-
+facebook_app = None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -69,15 +84,18 @@ def index():
 def webhook():
     print("Hello")
     if request.method == 'GET':
-        if request.args.get('hub.verify_token') == twitter_app._verify_token:
+        if request.args.get('hub.verify_token') == facebook_app._verify_token:
             #return request.args.get('hub.challenge')
             return 'OK'
         raise ValueError('FACEBOOK_VERIFY_TOKEN does not match.')
     elif request.method == 'POST':
-        twitter_app._messenger.handle(request.get_json(force=True))
+        facebook_app._messenger.handle(request.get_json(force=True))
     return ''
 
 if __name__ == '__main__':
 
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    facebook_app = FacebookBotClient()
+    print("App running on http://127.0.0.0:8080")
+    app.run(host='127.0.0.1', port=8080, debug=False)
 
+"""

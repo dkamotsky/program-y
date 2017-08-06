@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -16,6 +16,8 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 import logging
 from programy.parser.template.nodes.base import TemplateNode
+from programy.parser.exceptions import ParserException
+from programy.utils.text.text import TextUtils
 
 class TemplateBotNode(TemplateNode):
 
@@ -57,3 +59,34 @@ class TemplateBotNode(TemplateNode):
         xml += ' name="%s"' % self.name.resolve(bot, clientid)
         xml += " />"
         return xml
+
+    # ######################################################################################################
+    # BOT_PROPERTY_EXPRESSION ::==
+    # <bot name="PROPERTY"/> |
+    # <bot><name>TEMPLATE_EXPRESSION</name></bot>
+
+    def parse_expression(self, graph, expression):
+        name_found = False
+
+        if 'name' in expression.attrib:
+            self.name = self.parse_attrib_value_as_word_node(graph, expression, 'name')
+            name_found = True
+
+        self.parse_text(graph, self.get_text_from_element(expression))
+
+        for child in expression:
+            tag_name = TextUtils.tag_from_text(child.tag)
+
+            if tag_name == 'name':
+                self.name = self.parse_children_as_word_node(graph, child)
+                self.local = False
+                name_found = True
+
+            else:
+                graph.parse_tag_expression(child, self)
+
+            self.parse_text(graph, self.get_tail_from_element(child))
+
+        if name_found is False:
+            raise ParserException("Error, name not found in bot", xml_element=expression)
+

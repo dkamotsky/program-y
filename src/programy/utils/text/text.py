@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -15,6 +15,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 """
 
 import re
+import os
 
 class TextUtils:
 
@@ -22,14 +23,11 @@ class TextUtils:
 
     STRIP_ALL_WHITESPACE    = '[\s+]'
     STRIP_WHITESPACE        = '[\n\t\r+]'
-    STRIP_ALL_PUNCTUATION   = r'[^\w\s]'
+    STRIP_ALL_PUNCTUATION   = r'[:\'";,.?!\(\)\-"]'
 
     @staticmethod
     def get_tabs(depth: int, tabs=DEFAULT_TAB_SPACE):
-        string = ""
-        for i in range(depth):
-            string += tabs
-        return string
+        return tabs * depth
 
     @staticmethod
     def strip_whitespace(string):
@@ -43,8 +41,9 @@ class TextUtils:
 
     @staticmethod
     def strip_all_punctuation(string):
-        first_pass = re.sub(TextUtils.STRIP_ALL_PUNCTUATION, '', string)
-        return first_pass
+        first_pass = re.sub(TextUtils.STRIP_ALL_PUNCTUATION, ' ', string)
+        second_pass = re.sub(r'\s+', ' ', first_pass)
+        return second_pass.strip()
 
     @staticmethod
     def urlify(string):
@@ -54,4 +53,35 @@ class TextUtils:
     def strip_html(data, replace_with=''):
         p = re.compile(r'<.*?>')
         return p.sub(replace_with, data)
+
+    @staticmethod
+    def replace_path_seperator(path, old="/", new=os.sep):
+        if old in path:
+            return path.replace(old, new)
+        else:
+            return path
+
+    @staticmethod
+    def tag_and_namespace_from_text(text):
+        # If there is a namespace, then it looks something like
+        # {http://alicebot.org/2001/AIML}aiml
+        pattern = re.compile("^{.*}.*$")
+        if pattern.match(text) is None:
+            # If that pattern does not exist, assume that the text is the tag name
+            return text, None
+
+        # Otherwise, extract namespace and tag name
+        m = re.compile("^({.*})(.*)$")
+        g = m.match(text)
+        if g is not None:
+            namespace = g.group(1).strip()
+            tag_name = g.group(2).strip()
+            return tag_name, namespace
+        else:
+            return None, None
+
+    @staticmethod
+    def tag_from_text(text):
+        tag, _ = TextUtils.tag_and_namespace_from_text(text)
+        return tag
 

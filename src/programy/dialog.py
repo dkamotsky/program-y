@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -34,6 +34,9 @@ class Sentence(object):
         for word in sentence._words:
             self._words.append(word)
 
+    def replace_words(self, text):
+        self._words = self._split_into_words(text, " ")
+
     @property
     def response(self):
         return self._response
@@ -57,7 +60,7 @@ class Sentence(object):
         if num < self.num_words():
             return self.words[num]
         else:
-            raise Exception("Num word array violation !")
+            return None
 
     def words_from_current_pos(self, current_pos: int):
         if len(self._words) > 0:
@@ -83,9 +86,13 @@ class Sentence(object):
 class Question(object):
 
     @staticmethod
-    def create_from_text(text: str, sentence_split_chars: str=".", word_split_chars: str=" "):
+    def create_from_text(text: str, sentence_split_chars: str=".", word_split_chars: str=" ", split=True):
         question = Question()
-        question._split_into_sentences(text, sentence_split_chars, word_split_chars)
+        if split is True:
+            question._split_into_sentences(text, sentence_split_chars, word_split_chars)
+        else:
+            question._sentences = []
+            question._sentences.append(Sentence(text))
         return question
 
     @staticmethod
@@ -130,11 +137,20 @@ class Question(object):
         else:
             return self._sentences[-1]
 
-    def previous_sentence(self, num):
+    """
+    def previous_sentence(self):
+        if len(self._sentences) < 2:
+            raise Exception("Num sentence array violation !")
+        else:
+            return self._sentences[len(self._sentences)-2]
+    """
+
+    def previous_nth_sentence(self, num):
         if len(self._sentences) < num:
             raise Exception("Num sentence array violation !")
         else:
-            return self._sentences[len(self._sentences)-num]
+            previous = -1 - num
+            return self._sentences[previous]
 
     def combine_sentences(self):
         return ". ".join([sentence.text() for sentence in self._sentences])
@@ -173,20 +189,20 @@ class Conversation(object):
     def questions(self):
         return self._questions
 
-    # 1 indexed, not 0 indexed, 1st question is nth_question(1)
-    def nth_question(self, num: int):
-        if num <= len(self._questions):
-            question_num = len(self._questions)-num
-            return self._questions[question_num]
-        else:
-            raise Exception("Invalid question index")
-
     def current_question(self):
         if len(self._questions) > 0:
             return self._questions[-1]
         else:
             raise Exception("Invalid question index")
 
+    def previous_nth_question(self, num: int):
+        if len(self._questions) < num:
+            raise Exception("Num question array violation !")
+        else:
+            previous = -1 - num
+            return self._questions[previous]
+
+    """
     def all_sentences(self):
         sentences = []
         for question in self._questions:
@@ -200,6 +216,7 @@ class Conversation(object):
             return sentences[len(sentences)-num]
         else:
             raise Exception("Invalid sentence index")
+    """
 
     def set_predicate(self, name: str, value: str):
         if name == 'topic':

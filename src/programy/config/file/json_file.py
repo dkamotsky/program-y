@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -18,37 +18,45 @@ import json
 
 import logging
 from programy.config.file.file import BaseConfigurationFile
+from programy.config.programy import ProgramyConfiguration
 
 
 class JSONConfigurationFile(BaseConfigurationFile):
 
-    def __init__(self, client_config):
-        BaseConfigurationFile.__init__(self, client_config)
+    def __init__(self):
+        BaseConfigurationFile.__init__(self)
         self.json_data = None
 
-    def load_from_text(self, text, bot_root):
+    def load_from_text(self, text, client_configuration, bot_root):
         self.json_data = json.loads(text)
-        self.client_config.load_config_data(self, bot_root)
+        configuration = ProgramyConfiguration(client_configuration)
+        configuration.load_config_data(self, bot_root)
+        return configuration
 
-    def load_from_file(self, filename, bot_root):
+    def load_from_file(self, filename, client_configuration, bot_root):
+        configuration = ProgramyConfiguration(client_configuration)
         with open(filename, 'r+') as json_data_file:
             self.json_data = json.load(json_data_file)
-            self.client_config.load_config_data(self, bot_root)
+            configuration.load_config_data(self, bot_root)
+        return configuration
 
     def get_section(self, section_name, parent_section=None):
         if parent_section is None:
-            return self.json_data[section_name]
+            if section_name in self.json_data:
+                return self.json_data[section_name]
         else:
-            return parent_section[section_name]
+            if section_name in parent_section:
+                return parent_section[section_name]
+        return None
 
-    def get_section_data(self, section_name, parent_section=None):
-        return self.get_section(section_name, parent_section)
+    def get_keys(self, section):
+        return section.keys()
 
-    def get_child_section_keys(self, section_name, parent_section=None):
-        if parent_section is None:
-            return self.json_data[section_name].keys()
+    def get_child_section_keys(self, child_section_name, parent_section):
+        if child_section_name in parent_section:
+            return parent_section[child_section_name].keys()
         else:
-            return parent_section[section_name].keys()
+            return None
 
     def get_option(self, section, option_name, missing_value=None):
         if option_name in section:
@@ -57,4 +65,16 @@ class JSONConfigurationFile(BaseConfigurationFile):
             logging.warning("Missing value for [%s] in config , return default value %s", option_name, missing_value)
             return missing_value
 
+    def get_bool_option(self, section, option_name, missing_value=False):
+        if option_name in section:
+            return section[option_name]
+        else:
+            logging.warning("Missing value for [%s] in config, return default value %s", option_name, missing_value)
+            return missing_value
 
+    def get_int_option(self, section, option_name, missing_value=0):
+        if option_name in section:
+            return section[option_name]
+        else:
+            logging.warning("Missing value for [%s] in config, return default value %d", option_name, missing_value)
+            return missing_value

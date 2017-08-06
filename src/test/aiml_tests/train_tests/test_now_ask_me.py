@@ -2,7 +2,8 @@ import unittest
 import os
 from test.aiml_tests.client import TestClient
 from programy.config.file.factory import ConfigurationFactory
-from programy.config.client.client import ClientConfiguration
+from programy.config.programy import ProgramyConfiguration
+from programy.config.sections.client.console import ConsoleConfiguration
 
 class NowAskMeTrainTestClient(TestClient):
 
@@ -10,8 +11,9 @@ class NowAskMeTrainTestClient(TestClient):
         TestClient.__init__(self)
 
     def load_configuration(self, arguments):
-        self.configuration = ClientConfiguration()
-        ConfigurationFactory.load_configuration_from_file(self.configuration, os.path.dirname(__file__)+"/testconfig.yaml")
+        self.configuration = ConfigurationFactory.load_configuration_from_file(ConsoleConfiguration(),
+                                                                               os.path.dirname(__file__)+ os.sep + "testconfig.yaml",
+                                                                               bot_root=os.path.dirname(__file__))
 
 class TrainAIMLTests(unittest.TestCase):
 
@@ -22,4 +24,4 @@ class TrainAIMLTests(unittest.TestCase):
         TrainAIMLTests.test_client.bot.brain.dump_tree()
         response = TrainAIMLTests.test_client.bot.ask_question("test", "daddy is great")
         self.assertIsNotNone(response)
-        self.assertEqual('Now you can ask me: "Who IS GREAT?" and "What does my DADDY be?"', response)
+        self.assertEqual('Now you can ask me: "Who is GREAT?" and "What does my daddy be?"', response)

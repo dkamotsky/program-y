@@ -1,11 +1,27 @@
+"""
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
 import logging
 import tweepy
 from tweepy.error import RateLimitError
 import time
 import os
 
-from programy.clients.clients import BotClient
-from programy.config.client.twitter import TwitterClientConfiguration
+from programy.clients.client import BotClient
+from programy.config.sections.client.twitter import TwitterConfiguration
 
 class MyStreamListener(tweepy.StreamListener):
 
@@ -15,14 +31,14 @@ class MyStreamListener(tweepy.StreamListener):
 
 class TwitterBotClient(BotClient):
 
-    def __init__(self):
-        BotClient.__init__(self)
+    def __init__(self, argument_parser=None):
+        BotClient.__init__(self, argument_parser)
 
     def set_environment(self):
         self.bot.brain.predicates.pairs.append(["env", "Twitter"])
 
     def get_client_configuration(self):
-        return TwitterClientConfiguration()
+        return TwitterConfiguration()
 
     def process_direct_messages(self, last_message_id):
         logging.debug ("Processing direct messages since [%s]"%last_message_id)
@@ -128,7 +144,7 @@ class TwitterBotClient(BotClient):
         auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
 
-        self._welcome_message = self.configuration.twitter_configuration.welcome_message
+        self._welcome_message = self.configuration.client_configuration.welcome_message
 
         self._api = tweepy.API(auth)
 
@@ -139,11 +155,11 @@ class TwitterBotClient(BotClient):
         last_direct_message_id = -1
         last_status_id = -1
 
-        if self.configuration.twitter_configuration.storage == 'file':
-            logging.debug("Reads messages ids from [%s]" % self.configuration.twitter_configuration.storage_location)
-            if os.path.exists(self.configuration.twitter_configuration.storage_location):
+        if self.configuration.client_configuration.storage == 'file':
+            logging.debug("Reads messages ids from [%s]" % self.configuration.client_configuration.storage_location)
+            if os.path.exists(self.configuration.client_configuration.storage_location):
                 try:
-                    with open(self.configuration.twitter_configuration.storage_location, "r+") as idfile:
+                    with open(self.configuration.client_configuration.storage_location, "r+") as idfile:
                         last_direct_message_id = int(idfile.readline().strip())
                         last_status_id = int(idfile.readline().strip())
                 except Exception as e:
@@ -152,10 +168,10 @@ class TwitterBotClient(BotClient):
         return (last_direct_message_id, last_status_id)
 
     def store_last_message_ids(self, last_direct_message_id, last_status_id):
-        if self.configuration.twitter_configuration.storage == 'file':
-            logging.debug("Writing messages ids to [%s]" % self.configuration.twitter_configuration.storage_location)
+        if self.configuration.client_configuration.storage == 'file':
+            logging.debug("Writing messages ids to [%s]" % self.configuration.client_configuration.storage_location)
             try:
-                with open(self.configuration.twitter_configuration.storage_location, "w+") as idfile:
+                with open(self.configuration.client_configuration.storage_location, "w+") as idfile:
                     idfile.write("%d\n"%last_direct_message_id)
                     idfile.write("%d\n"%last_status_id)
             except Exception as e:
@@ -168,20 +184,20 @@ class TwitterBotClient(BotClient):
         running = True
         while running is True:
             try:
-                if self.configuration.twitter_configuration.use_direct_message is True:
-                    if self.configuration.twitter_configuration.auto_follow is True:
+                if self.configuration.client_configuration.use_direct_message is True:
+                    if self.configuration.client_configuration.auto_follow is True:
                         self.process_followers()
 
                     last_direct_message_id = self.process_direct_messages(last_direct_message_id)
                     logging.debug("Last message id = %d"% last_direct_message_id)
 
-                if self.configuration.twitter_configuration._use_status is True:
+                if self.configuration.client_configuration._use_status is True:
                     last_status_id = self.process_statuses(last_status_id)
                     logging.debug("Last status id = %d"% last_status_id)
 
                 self.store_last_message_ids(last_direct_message_id, last_status_id)
 
-                time.sleep(self.configuration.twitter_configuration.polling_interval)
+                time.sleep(self.configuration.client_configuration.polling_interval)
 
             except KeyboardInterrupt:
                 running = False
@@ -202,9 +218,9 @@ class TwitterBotClient(BotClient):
 
         self.initialise()
 
-        if self.configuration.twitter_configuration.polling is True:
+        if self.configuration.client_configuration.polling is True:
             self.use_polling()
-        elif self.configuration.twitter_configuration.streaming is True:
+        elif self.configuration.client_configuration.streaming is True:
             self.use_streaming()
         else:
             logging.error("No Twitter interactiong model specified in config ( polling or streaming )")

@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -16,6 +16,8 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 
 import logging
 import xml.etree.ElementTree as ET
+from programy.utils.text.text import TextUtils
+
 
 ######################################################################################################################
 #
@@ -57,23 +59,136 @@ class TemplateNode(object):
     def to_string(self):
         return "[NODE]"
 
-    def xml_tree(self, bot, clientid):
-        param = ["<template>"]
-        self.to_xml_children(param, bot, clientid)
-        param[0] += "</template>"
-        return ET.fromstring(param[0])
-
     def to_xml(self, bot, clientid):
+        return self.children_to_xml(bot, clientid)
+
+    def xml_tree(self, bot, clientid):
+        xml = "<template>"
+        xml += self.children_to_xml(bot, clientid)
+        xml += "</template>"
+        return ET.fromstring(xml)
+
+    def children_to_xml(self, bot, clientid):
         xml = ""
+        first = True
         for child in self.children:
+            if first is not True:
+                xml += " "
+            first = False
             xml += child.to_xml(bot, clientid)
         return xml
 
-    def to_xml_children(self, param, bot, clientid):
-        first = True
-        for child in self.children:
-            if first is False:
-                param[0] += " "
-            param[0] += child.to_xml(bot, clientid)
-            first = False
+    def parse_text(self, graph, text):
+        if text is not None:
+            string = text.strip()
+            if len(string) > 0:
+                words = string.split(" ")
+                for word in words:
+                    if word is not None and len(word) > 0:
+                        word_class = graph.get_node_class_by_name('word')
+                        word_node = word_class(word.strip())
+                        self.children.append(word_node)
+                return True
+        return False
 
+    def get_text_from_element(self, element):
+        text = element.text
+        if text is not None:
+            text = text.strip()
+            return text
+        return None
+
+    def get_tail_from_element(self, element):
+        text = element.tail
+        if text is not None:
+            text = text.strip()
+            if text == "":
+                return None
+            return text
+        return None
+
+    def parse_template_node(self, graph, pattern):
+
+        head_text = self.get_text_from_element(pattern)
+        head_result = self.parse_text(graph, head_text)
+
+        found_sub = False
+        for sub_pattern in pattern:
+            graph.parse_tag_expression(sub_pattern, self)
+
+            tail_text = self.get_tail_from_element(sub_pattern)
+            self.parse_text(graph, tail_text)
+
+            found_sub = True
+
+        if head_result is False and found_sub is False:
+            if hasattr(pattern, '_end_line_number'):
+                logging.warning("No context in template tag at [line(%d), column(%d)]" %
+                                (pattern._end_line_number,
+                                 pattern._end_column_number))
+            else:
+                logging.warning("No context in template tag")
+
+    #######################################################################################################
+
+    def add_default_star(self):
+        return False
+
+    def _parse_node(self, graph, expression):
+        expression_text = self.parse_text(graph, self.get_text_from_element(expression))
+
+        expression_children = False
+        for child in expression:
+            graph.parse_tag_expression(child, self)
+            self.parse_text(graph, self.get_tail_from_element(child))
+            expression_children = True
+
+        if expression_text is False and expression_children is False:
+            if self.add_default_star() is True:
+                logging.debug ("Node has no content (text or children), default to <star/>")
+                star_class = graph.get_node_class_by_name('star')
+                star_node = star_class()
+                self.append(star_node)
+
+    #######################################################################################################
+
+    def _parse_node_with_attrib(self, graph, expression, attrib_name, default_value=None):
+
+        attrib_found = True
+        if attrib_name in expression.attrib:
+            self.set_attrib(attrib_name, expression.attrib[attrib_name])
+
+        self.parse_text(graph, self.get_text_from_element(expression))
+
+        for child in expression:
+            tag_name = TextUtils.tag_from_text(child.tag)
+
+            if tag_name == attrib_name:
+                self.set_attrib(attrib_name, self.get_text_from_element(child))
+            else:
+                graph.parse_tag_expression(child, self)
+
+            self.parse_text(graph, self.get_tail_from_element(child))
+
+        if attrib_found is False:
+            logging.debug("Setting default value for attrib [%s]", attrib_name)
+            self.set_attrib(attrib_name, default_value)
+
+    #######################################################################################################
+
+    def parse_attrib_value_as_word_node(self, graph, expression, attrib_name):
+        node = graph.get_base_node()
+        name_node = graph.get_word_node(expression.attrib[attrib_name])
+        node.append(name_node)
+        return node
+
+    def parse_children_as_word_node(self, graph, child):
+        node = graph.get_base_node()
+        node.parse_text(graph, self.get_text_from_element(child))
+        for sub_child in child:
+            graph.parse_tag_expression(sub_child, node)
+            node.parse_text(graph, self.get_text_from_element(child))
+        return node
+
+    def parse_expression(self, graph, expression):
+        raise NotImplementedError("Never call this directly, call the subclass instead!")
