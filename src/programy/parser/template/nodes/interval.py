@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -19,22 +19,16 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from programy.parser.template.nodes.base import TemplateNode
 from programy.parser.template.nodes.word import TemplateWordNode
-
+from programy.utils.text.text import TextUtils
 
 class TemplateIntervalNode(TemplateNode):
 
-    def __init__(self, date_format="%c", style="days"):
+    def __init__(self):
         TemplateNode.__init__(self)
+        self._format = None
+        self._style = None
         self._interval_from = None
         self._interval_to = None
-        if isinstance(date_format, str):
-            self._format = TemplateWordNode(date_format)
-        else:
-            self._format = date_format
-        if isinstance(style, str):
-            self._style = TemplateWordNode(style)
-        else:
-            self._style = style
 
     @property
     def format(self):
@@ -136,3 +130,66 @@ class TemplateIntervalNode(TemplateNode):
         xml += '</to>'
         xml += '</interval>'
         return xml
+
+    #######################################################################################################
+    # INTERVAL_EXPRESSION ::== <interval>
+    # 							(DATE_ATTRIBUTE_TAGS)
+    # 							<style>(TEMPLATE_EXPRESSION)</style>
+    # 							<from>(TEMPLATE_EXPRESSION)</from>
+    # 							<to>(TEMPLATE_EXPRESSION)</to>
+    # 						</interval>
+
+    def parse_expression(self, graph, expression):
+
+        if 'format' in expression.attrib:
+            self.format = graph.get_word_node(expression.attrib['format'])
+
+        head_text = self.get_text_from_element(expression)
+        self.parse_text(graph, head_text)
+
+        for child in expression:
+            tag_name = TextUtils.tag_from_text(child.tag)
+
+            if tag_name == 'format':
+                self.format = graph.get_word_node(self.get_text_from_element(child))
+
+            elif tag_name == 'style':
+                node = graph.get_base_node()
+                node.parse_text(graph, self.get_text_from_element(child))
+                for sub_child in child:
+                    graph.parse_tag_expression(sub_child, node)
+                    node.parse_text(graph, self.get_text_from_element(child))
+                self.style = node
+
+            elif tag_name == 'from':
+                node = graph.get_base_node()
+                node.parse_text(graph, self.get_text_from_element(child))
+                for sub_child in child:
+                    graph.parse_tag_expression(sub_child, node)
+                    node.parse_text(graph, self.get_text_from_element(child))
+                self.interval_from = node
+
+            elif tag_name == 'to':
+                node = graph.get_base_node()
+                node.parse_text(graph, self.get_text_from_element(child))
+                for sub_child in child:
+                    graph.parse_tag_expression(sub_child, node)
+                    node.parse_text(graph, self.get_text_from_element(child))
+                self.interval_to = node
+            else:
+                graph.parse_tag_expression(child, self)
+
+            tail_text = self.get_tail_from_element(child)
+            self.parse_text(graph, tail_text)
+
+        if self.format is None:
+            logging.warning("Interval node, format missing, defaulting to 'c%%'!")
+            self.format = "%c"
+        if self.style is None:
+            logging.warning("style node, format missing, defaulting to 'days'!")
+            self.style = "days"
+        if self.interval_from is None:
+            logging.warning("interval_from node, format missing !")
+        if self.interval_to is None:
+            logging.warning("interval_to node, format missing !")
+

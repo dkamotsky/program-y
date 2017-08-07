@@ -1,5 +1,5 @@
 """
-Copyright(c) 2016 Keith Sterling
+Copyright(c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files(the "Software"), to deal in the Software without restriction, including without limitation
@@ -18,20 +18,17 @@ import logging
 import json
 from programy.utils.files.filefinder import FileFinder
 
-def add_prefixes(set_dict):
-    prefix_dict={}
-    for k in set_dict.keys():
-        if isinstance(k, tuple):
-            for i in range(1, len(k)):
-                r=k[0:-i]
-                r=r[0] if len(r)==1 else r
-                if not r in set_dict:
-                    prefix_dict[r]=False
-    set_dict.update(prefix_dict)         
-
 class SetLoader(FileFinder):
     def __init__(self):
         FileFinder.__init__(self)
+
+    def sort_sets(self, the_set):
+        sorted_set = {}
+        for key in the_set.keys():
+            values = the_set[key]
+            sorted_values = sorted(values, key=len, reverse=True)
+            sorted_set[key] = sorted_values
+        return sorted_set
 
     def load_file_contents(self, filename):
         logging.debug("Loading set [%s]", filename)
@@ -49,22 +46,26 @@ class SetLoader(FileFinder):
                         self.process_line(line, the_set)
             except Exception as excep:
                 logging.error("Failed to load set [%s] - %s", filename, excep)
-        add_prefixes(the_set)
         logging.debug("Loaded set [%s]. Full contents: \n%s", filename, the_set)
-        return the_set
+        return self.sort_sets(the_set)
 
     def load_from_text(self, text):
         the_set = {}
         lines = text.split("\n")
         for line in lines:
             self.process_line(line, the_set)
-        return the_set
+        return self.sort_sets(the_set)
 
     def process_line(self, line, the_set):
         text = line.strip()
         if text is not None and len(text) > 0:
-            key=tuple(text.upper().split())
-            the_set[key[0] if len(key)==1 else key] = True
+            splits = text.split()
+            key = splits[0].upper()
+            if key not in the_set:
+                the_set[key] = []
+            #for word in splits:
+            #    the_set[key].append(word.upper())
+            the_set[key].append(splits)
 
 
 class SetCollection(object):
@@ -72,16 +73,13 @@ class SetCollection(object):
     def __init__(self):
         self._sets = {}
 
-    def add_list_to_set(self, name, set_contents):
+    def add_set(self, name, the_set):
         # Set names always stored in upper case to handle ambiquity
         set_name = name.upper()
         if set_name in self._sets:
             raise Exception("Set %s already exists" % set_name)
         logging.debug("Adding set [%s[ to set group", set_name)
-        new_set = {}
-        for word in set_contents:
-            new_set[word.upper()] = word
-        self._sets[set_name] = new_set
+        self._sets[set_name] = the_set
 
     def set(self, name):
         # Set names always stored in upper case to handle ambiquity
@@ -101,5 +99,8 @@ class SetCollection(object):
 
     def load(self, configuration):
         loader = SetLoader()
-        self._sets = loader.load_dir_contents(configuration.files, configuration.directories, configuration.extension)
+        if configuration.files is not None:
+            self._sets = loader.load_dir_contents(configuration.files, configuration.directories, configuration.extension)
+        else:
+            self._sets = {}
         return len(self._sets)

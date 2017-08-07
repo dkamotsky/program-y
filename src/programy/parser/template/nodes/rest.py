@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -28,9 +28,12 @@ class TemplateRestNode(TemplateNode):
     def resolve(self, bot, clientid):
         try:
             result = self.resolve_children_to_string(bot, clientid)
-            words = result.split(" ")
-            if len(words) > 1:
-                resolved = " ".join(words[1:])
+            if result is not "":
+                words = result.split(" ")
+                if len(words) > 1:
+                    resolved = " ".join(words[1:])
+                else:
+                    resolved = "NIL"
             else:
                 resolved = "NIL"
             logging.debug("[%s] resolved to [%s]", self.to_string(), resolved)
@@ -44,8 +47,13 @@ class TemplateRestNode(TemplateNode):
 
     def to_xml(self, bot, clientid):
         xml = "<rest>"
-        for child in self.children:
-            xml += child.to_xml(bot, clientid)
+        xml += self.children_to_xml(bot, clientid)
         xml += "</rest>"
         return xml
+
+    #######################################################################################################
+    # <implode>ABC</implode>
+
+    def parse_expression(self, graph, expression):
+        self._parse_node(graph, expression)
 

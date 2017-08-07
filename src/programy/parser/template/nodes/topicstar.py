@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -18,35 +18,51 @@ import logging
 
 from programy.parser.template.nodes.indexed import TemplateIndexedNode
 
-
+######################################################################################################################
+#
+# <topicstar />
+# <topicstar index=”n” />
+# The topicstar element will either return the current topic if used outside of a topic element or the wildcard
+# element when inside a topic element. The topicstar element can also use index like the star element can, though
+# this will return as the default case for empty predicates if no wildcards are present.
 
 class TemplateTopicStarNode(TemplateIndexedNode):
 
-    def __init__(self, position=1, index=1):
-        TemplateIndexedNode.__init__(self, position, index)
+    def __init__(self, index=1):
+        TemplateIndexedNode.__init__(self, index)
 
     def resolve(self, bot, clientid):
         try:
-            sentence = bot.get_conversation(clientid).current_question().current_sentence()
+            conversation= bot.get_conversation(clientid)
+
+            question = conversation.current_question()
+
+            sentence = question.current_sentence()
+
             resolved = sentence.matched_context.topicstar(self.index)
-            if resolved is None:
-                logging.error("That Star index not in range [%d]" % (self.index))
-                resolved = ""
+
+            logging.debug("[%s] resolved to [%s]", self.to_string(), resolved)
             return resolved
+
         except Exception as excep:
             logging.exception(excep)
             return ""
 
     def to_string(self):
-        return "TOPICSTAR Index=%s" % (self.index)
+        str = "TOPICSTAR"
+        str += self.get_index_as_str()
+        return str
 
     def to_xml(self, bot, clientid):
         xml = "<topicstar"
-        if self._position > 1:
-            xml += ' position="%d"' % self._position
-        if self._index > 1:
-            xml += ' index="%d"' % self._index
+        xml += self.get_index_as_xml()
         xml += ">"
         xml += "</topicstar>"
         return xml
+
+    #######################################################################################################
+    # TOPICSTAR_EXPRESSION ::== <topicstar( INDEX_ATTRIBUTE)/> | <topicstar><index>TEMPLATE_EXPRESSION</index></topicstar>
+
+    def parse_expression(self, graph, expression):
+        self._parse_node_with_attrib(graph, expression, "index", "1")
 

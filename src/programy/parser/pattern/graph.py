@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -24,29 +24,28 @@ from programy.parser.pattern.nodes.oneormore import PatternOneOrMoreWildCardNode
 from programy.parser.pattern.nodes.zeroormore import PatternZeroOrMoreWildCardNode
 from xml.etree.ElementTree import tostring
 
-# TODO better handling of <html> type tags
-
 #######################################################################################################################
 #
 class PatternGraph(object):
 
-    def __init__(self, root_node=None, pattern_factory=None):
+    def __init__(self, aiml_parser=None, root_node=None):
+        self._aiml_parser = aiml_parser
+
+        pattern_nodes = None
+        if aiml_parser is not None:
+            if aiml_parser._brain is not None:
+                pattern_nodes = aiml_parser._brain.configuration.nodes.pattern_nodes
+
+        self._pattern_factory = PatternNodeFactory()
+        self._pattern_factory.load_nodes_config_from_file(pattern_nodes)
+
         if root_node is None:
             logging.debug("Defaulting root to PatternRootNode")
-            self._root_node = PatternRootNode()
+            self._root_node = self._pattern_factory.get_root_node()
         else:
             if root_node.is_root() is False:
                 raise ParserException("Root node needs to be of base type PatternRootNode")
             self._root_node = root_node
-
-        if pattern_factory is None:
-            logging.debug("Defaulting node factory to PatternNodeFactory")
-            self._pattern_factory = PatternNodeFactory()
-            self._pattern_factory.load_nodes_config_from_file("dummy_config.conf")
-        else:
-            if isinstance(pattern_factory, PatternNodeFactory) is False:
-                raise ParserException("Pattern factory needs to be base class of PatternNodeFactory" )
-            self._pattern_factory = pattern_factory
 
     @property
     def root(self):
@@ -68,7 +67,7 @@ class PatternGraph(object):
 
     def node_from_element(self, element):
 
-        node_name = element.tag
+        node_name = TextUtils.tag_from_text(element.tag)
         if self._pattern_factory.exists(node_name) is False:
             raise ParserException ("Unknown node name [%s]"%node_name)
 
@@ -198,18 +197,30 @@ class PatternGraph(object):
         current_node = current_node.add_child(template_node)
         return current_node
 
-    def add_pattern_to_graph(self, pattern_element, topic_element, that_element, template_graph_root):
+    def add_pattern_to_graph(self, pattern_element, topic_element, that_element, template_graph_root, learn=False):
 
-        current_node = self.add_pattern_to_node(pattern_element)
+        pattern_node = self.add_pattern_to_node(pattern_element)
 
-        current_node = self.add_topic_to_node(topic_element, current_node)
+        topic_node = self.add_topic_to_node(topic_element, pattern_node)
 
-        current_node = self.add_that_to_node(that_element, current_node)
+        that_node = self.add_that_to_node(that_element, topic_node)
 
-        if current_node.has_template():
-            raise DuplicateGrammarException("Duplicate grammar tree found [%s] in [%s] with template [%s]" % (pattern_element.text, tostring(pattern_element), current_node.template.template.to_xml(None, None)))
+        if that_node.has_template() is True:
+            if learn is False:
+                if pattern_element.text is not None:
+                    raise DuplicateGrammarException("Dupicate grammar tree found [%s]"%(pattern_element.text.strip()))
+                else:
+                    raise DuplicateGrammarException("Dupicate grammar tree found for bot/set")
+            else:
+                if pattern_element.text is not None:
+                    logging.warning("Dupicate grammar tree found [%s] in learn, replacing existing" % (pattern_element.text.strip()))
+                else:
+                    logging.warning("Dupicate grammar tree found for bot/set in learn, replacing existing")
+
+                self.add_template_to_node(template_graph_root, that_node)
         else:
-            self.add_template_to_node(template_graph_root, current_node)
+            self.add_template_to_node(template_graph_root, that_node)
+        return that_node
 
     def count_words_in_patterns(self):
         counter = [0]

@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -15,11 +15,16 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 """
 
 import logging
-import os.path
+import re
 import xml.etree.ElementTree as ET
+try:
+    import _pickle as pickle
+except:
+    import pickle
+import gc
 
 from programy.processors.processing import ProcessorLoader
-from programy.config.brain import BrainConfiguration
+from programy.config.sections.brain.brain import BrainConfiguration
 from programy.mappings.denormal import DenormalCollection
 from programy.mappings.gender import GenderCollection
 from programy.mappings.maps import MapCollection
@@ -33,13 +38,14 @@ from programy.mappings.triples import TriplesCollection
 from programy.parser.aiml_parser import AIMLParser
 from programy.utils.services.service import ServiceFactory
 from programy.utils.text.text import TextUtils
+from programy.utils.classes.loader import ClassLoader
+import datetime
+
 
 class Brain(object):
-
     def __init__(self, configuration: BrainConfiguration):
         self._configuration = configuration
-        self._aiml_parser = AIMLParser(stop_on_invalid=True)
-
+        self._aiml_parser = AIMLParser(self)
         self._denormal_collection = DenormalCollection()
         self._normal_collection = NormalCollection()
         self._gender_collection = GenderCollection()
@@ -54,6 +60,12 @@ class Brain(object):
 
         self._preprocessors = ProcessorLoader()
         self._postprocessors = ProcessorLoader()
+
+        self._authentication = None
+        self._authorisation = None
+
+        self._default_oob = None
+        self._oob = {}
 
         self.load(self._configuration)
 
@@ -90,7 +102,7 @@ class Brain(object):
         return self._predicates_collection
 
     @property
-    def pronounds(self):
+    def pronouns(self):
         return self._pronouns_collection
 
     @property
@@ -117,98 +129,159 @@ class Brain(object):
     def postprocessors(self):
         return self._postprocessors
 
-    def load(self, brain_configuration: BrainConfiguration):
+    @property
+    def authentication(self):
+        return self._authentication
+
+    @property
+    def authorisation(self):
+        return self._authorisation
+
+    @property
+    def default_oob(self):
+        return self._default_oob
+
+    @property
+    def oobs(self):
+        return self._oob
+
+    def load_binary(self, brain_configuration):
+        logging.info("Loading binary brain from [%s]" % brain_configuration.binaries.binary_filename)
+        try:
+            start = datetime.datetime.now()
+            gc.disable()
+            f = open(brain_configuration.binaries.binary_filename, "rb")
+            self._aiml_parser = pickle.load(f)
+            gc.enable()
+            f.close()
+            stop = datetime.datetime.now()
+            diff = stop - start
+            logging.info("Brain load took a total of %.2f sec" % diff.total_seconds())
+            load_aiml = False
+        except Exception as e:
+            logging.exception(e)
+            if brain_configuration.binaries.load_aiml_on_binary_fail is True:
+                load_aiml = True
+            else:
+                raise e
+
+    def load_aiml(self, brain_configuration):
+        logging.info("Loading aiml source brain")
         self._aiml_parser.load_aiml(brain_configuration)
+
+    def save_binary(self, brain_configuration):
+        logging.info("Saving binary brain to [%s]" % brain_configuration.binaries.binary_filename)
+        start = datetime.datetime.now()
+        f = open(brain_configuration.binaries.binary_filename, "wb")
+        pickle.dump(self._aiml_parser, f)
+        f.close()
+        stop = datetime.datetime.now()
+        diff = stop - start
+        logging.info("Brain save took a total of %.2f sec" % diff.total_seconds())
+
+    def load(self, brain_configuration: BrainConfiguration):
+
+        if brain_configuration.binaries.load_binary is True:
+            self.load_binary(brain_configuration)
+
+        self.load_aiml(brain_configuration)
+
+        if brain_configuration.binaries.save_binary is True:
+            self.save_binary(brain_configuration)
+
+        logging.info("Loading collections")
         self.load_collections(brain_configuration)
+
+        logging.info("Loading services")
         self.load_services(brain_configuration)
 
+        logging.info("Loading security services")
+        self.load_security_services(brain_configuration)
+
+        logging.info("Loading oob processors")
+        self.load_oob_processors(brain_configuration)
+
     def _load_denormals(self, brain_configuration):
-        if brain_configuration.denormal is not None:
-            total = self._denormal_collection.load_from_filename(brain_configuration.denormal)
+        if brain_configuration.files.denormal is not None:
+            total = self._denormal_collection.load_from_filename(brain_configuration.files.denormal)
             logging.info("Loaded a total of %d denormalisations", total)
         else:
             logging.warning("No configuration setting for denormal")
 
     def _load_normals(self, brain_configuration):
-        if brain_configuration.normal is not None:
-            total = self._normal_collection.load_from_filename(brain_configuration.normal)
+        if brain_configuration.files.normal is not None:
+            total = self._normal_collection.load_from_filename(brain_configuration.files.normal)
             logging.info("Loaded a total of %d normalisations", total)
         else:
             logging.warning("No configuration setting for normal")
 
     def _load_genders(self, brain_configuration):
-        if brain_configuration.gender is not None:
-            total = self._gender_collection.load_from_filename(brain_configuration.gender)
+        if brain_configuration.files.gender is not None:
+            total = self._gender_collection.load_from_filename(brain_configuration.files.gender)
             logging.info("Loaded a total of %d genderisations", total)
         else:
             logging.warning("No configuration setting for gender")
 
     def _load_persons(self, brain_configuration):
-        if brain_configuration.person is not None:
-            total = self._person_collection.load_from_filename(brain_configuration.person)
+        if brain_configuration.files.person is not None:
+            total = self._person_collection.load_from_filename(brain_configuration.files.person)
             logging.info("Loaded a total of %d persons", total)
         else:
             logging.warning("No configuration setting for person")
 
     def _load_person2s(self, brain_configuration):
-        if brain_configuration.person2 is not None:
-            total = self._person2_collection.load_from_filename(brain_configuration.person2)
+        if brain_configuration.files.person2 is not None:
+            total = self._person2_collection.load_from_filename(brain_configuration.files.person2)
             logging.info("Loaded a total of %d person2s", total)
         else:
             logging.warning("No configuration setting for person2")
 
     def _load_predicates(self, brain_configuration):
-        if brain_configuration.predicates is not None:
-            total = self._predicates_collection.load_from_filename(brain_configuration.predicates)
+        if brain_configuration.files.predicates is not None:
+            total = self._predicates_collection.load_from_filename(brain_configuration.files.predicates)
             logging.info("Loaded a total of %d predicates", total)
         else:
             logging.warning("No configuration setting for predicates")
 
     def _load_pronouns(self, brain_configuration):
-        if brain_configuration.pronouns is not None:
-            total = self._pronouns_collection.load_from_filename(brain_configuration.pronouns)
+        if brain_configuration.files.pronouns is not None:
+            total = self._pronouns_collection.load_from_filename(brain_configuration.files.pronouns)
             logging.info("Loaded a total of %d pronouns", total)
         else:
             logging.warning("No configuration setting for pronouns")
 
     def _load_properties(self, brain_configuration):
-        if brain_configuration.properties is not None:
-            total = self._properties_collection.load_from_filename(brain_configuration.properties)
+        if brain_configuration.files.properties is not None:
+            total = self._properties_collection.load_from_filename(brain_configuration.files.properties)
             logging.info("Loaded a total of %d properties", total)
         else:
             logging.warning("No configuration setting for properties")
 
     def _load_triples(self, brain_configuration):
-        if brain_configuration.triples is not None:
-            total = self._properties_collection.load_from_filename(brain_configuration.triples)
+        if brain_configuration.files.triples is not None:
+            total = self._properties_collection.load_from_filename(brain_configuration.files.triples)
             logging.info("Loaded a total of %d triples", total)
         else:
             logging.warning("No configuration setting for triples")
 
     def _load_sets(self, brain_configuration):
-        if brain_configuration.set_files is not None:
-            total = self._sets_collection.load(brain_configuration.set_files)
-            logging.info("Loaded a total of %d sets files", total)
-        else:
-            logging.warning("No configuration setting for set files")
+        total = self._sets_collection.load(brain_configuration.files.set_files)
+        logging.info("Loaded a total of %d sets files", total)
 
     def _load_maps(self, brain_configuration):
-        if brain_configuration.map_files is not None:
-            total = self._maps_collection.load(brain_configuration.map_files)
-            logging.info("Loaded a total of %d maps files", total)
-        else:
-            logging.warning("No configuration setting for map files")
+        total = self._maps_collection.load(brain_configuration.files.map_files)
+        logging.info("Loaded a total of %d maps files", total)
 
     def _load_preprocessors(self, brain_configuration):
-        if brain_configuration.preprocessors is not None:
-            total = self._preprocessors.load(brain_configuration.preprocessors)
+        if brain_configuration.files.preprocessors is not None:
+            total = self._preprocessors.load(brain_configuration.files.preprocessors)
             logging.info("Loaded a total of %d pre processors", total)
         else:
             logging.warning("No configuration setting for pre processors")
 
     def _load_postprocessors(self, brain_configuration):
-        if brain_configuration.postprocessors is not None:
-            total = self._postprocessors.load(brain_configuration.postprocessors)
+        if brain_configuration.files.postprocessors is not None:
+            total = self._postprocessors.load(brain_configuration.files.postprocessors)
             logging.info("Loaded a total of %d post processors", total)
         else:
             logging.warning("No configuration setting for post processors")
@@ -231,10 +304,52 @@ class Brain(object):
     def load_services(self, brain_configuration):
         ServiceFactory.preload_services(brain_configuration.services)
 
+    def load_security_services(self, brain_configuration):
+        if brain_configuration.security is not None:
+            if brain_configuration.security.authentication is not None:
+                if brain_configuration.security.authentication.classname is not None:
+                    try:
+                        classobject = ClassLoader.instantiate_class(
+                            brain_configuration.security.authentication.classname)
+                        self._authentication = classobject(brain_configuration.security.authentication)
+                    except Exception as excep:
+                        logging.exception(excep)
+            else:
+                logging.debug("No authentication configuration defined")
+
+            if brain_configuration.security.authorisation is not None:
+                if brain_configuration.security.authorisation.classname is not None:
+                    try:
+                        classobject = ClassLoader.instantiate_class(
+                            brain_configuration.security.authorisation.classname)
+                        self._authorisation = classobject(brain_configuration.security.authorisation)
+                    except Exception as excep:
+                        logging.exception(excep)
+            else:
+                logging.debug("No authorisation configuration defined")
+
+        else:
+            logging.debug("No security configuration defined, running open...")
+
     def pre_process_question(self, bot, clientid, question):
         return self.preprocessors.process(bot, clientid, question)
 
+    def parse_last_sentences_from_response(self, response):
+        response = re.sub(r'<\s*br\s*/>\s*', ".", response)
+        response = re.sub(r'<br></br>*', ".", response)
+        sentences = response.split(".")
+        sentences = [x for x in sentences if x]
+        last_sentence = sentences[-1]
+        that_pattern = TextUtils.strip_all_punctuation(last_sentence)
+        that_pattern = that_pattern.strip()
+        return that_pattern
+
     def ask_question(self, bot, clientid, sentence) -> str:
+
+        if self.authentication is not None:
+            if self.authentication.authenticate(clientid) is False:
+                logging.error("[%s] failed authentication!")
+                return self.authentication.configuration.denied_srai
 
         conversation = bot.get_conversation(clientid)
 
@@ -246,13 +361,13 @@ class Brain(object):
             logging.info("Topic pattern = [%s]", topic_pattern)
 
         try:
-            that_question = conversation.nth_question(2)
+            that_question = conversation.previous_nth_question(1)
             that_sentence = that_question.current_sentence()
 
             # If the last response was valid, i.e not none and not empty string, then use
             # that as the that_pattern, otherwise we default to '*' as pattern
             if that_sentence.response is not None and that_sentence.response != '':
-                that_pattern = TextUtils.strip_all_punctuation(that_sentence.response)
+                that_pattern = self.parse_last_sentences_from_response(that_sentence.response)
                 logging.info("That pattern = [%s]", that_pattern)
             else:
                 logging.info("That pattern, no response, default to [*]")
@@ -262,47 +377,74 @@ class Brain(object):
             logging.info("No That pattern default to [*]")
             that_pattern = "*"
 
-        match_context =  self._aiml_parser.match_sentence(bot, clientid,
-                                                        sentence,
-                                                        topic_pattern=topic_pattern,
-                                                        that_pattern=that_pattern)
+        match_context = self._aiml_parser.match_sentence(bot, clientid,
+                                                         sentence,
+                                                         topic_pattern=topic_pattern,
+                                                         that_pattern=that_pattern)
 
         if match_context is not None:
             template_node = match_context.template_node()
             logging.debug("AIML Parser evaluating template [%s]", template_node.to_string())
-            #template_node.template.dump(tabs="", output_func=print)
             response = template_node.template.resolve(bot, clientid)
+
+            if "<oob>" in response:
+                response, oob = self.strip_oob(response)
+                if oob is not None:
+                    oob_response = self.process_oob(bot, clientid, oob)
+                    response = response + " " + oob_response
+
             return response
 
         return None
+
+    def load_oob_processors(self, brain_configuration):
+        if brain_configuration.oob is not None:
+            if brain_configuration.oob.default() is not None:
+                try:
+                    logging.info("Loading default oob")
+                    classobject = ClassLoader.instantiate_class(brain_configuration.oob.default().classname)
+                    self._default_oob = classobject()
+                except Exception as excep:
+                    logging.exception(excep)
+
+            for oob_name in  brain_configuration.oob.oobs():
+                try:
+                    logging.info("Loading oob: %s"%oob_name)
+                    classobject = ClassLoader.instantiate_class(brain_configuration.oob.oob(oob_name).classname)
+                    self._oob[oob_name] = classobject()
+                except Exception as excep:
+                    logging.exception(excep)
+
+    def strip_oob(self, response):
+        m = re.compile("(.*)(<\s*oob\s*>.*<\/\s*oob\s*>)(.*)")
+        g = m.match(response)
+        if g is not None:
+            front =  g.group(1).strip()
+            back = g.group(3).strip()
+            response = ""
+            if front != "":
+                response = front + " "
+            response += back
+            oob = g.group(2)
+            return response, oob
+        return response, None
+
+    def process_oob(self, bot, clientid, oob_command):
+
+        oob_content = ET.fromstring(oob_command)
+
+        if oob_content.tag == 'oob':
+            for child in oob_content.findall('./'):
+                if child.tag in self._oob:
+                    oob_class = self._oob[child.tag]
+                    return oob_class.process_out_of_bounds(bot, clientid, child)
+                else:
+                    return self._default_oob.process_out_of_bounds(bot, clientid, child)
+
+        return ""
 
     def post_process_response(self, bot, clientid, response: str):
         return self.postprocessors.process(bot, clientid, response)
 
     def dump_tree(self):
         self._aiml_parser.pattern_parser.root.dump(tabs="")
-
-    def write_learnf_to_file(self, bot, clientid, pattern, topic, that, template):
-        learnf_path = "%s/learnf%s" % (self._configuration.aiml_files.files, self._configuration.aiml_files.extension)
-        logging.debug("Writing learnf to %s", learnf_path)
-
-        if os.path.isfile(learnf_path) is False:
-            file = open(learnf_path, "w+")
-            file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            file.write('<aiml>\n')
-            file.write('</aiml>\n')
-            file.close()
-
-        tree = ET.parse(learnf_path)
-        root = tree.getroot()
-
-        # Add our new element
-        child = ET.Element("category")
-        child.append(pattern)
-        child.append(topic)
-        child.append(that)
-        child.append(template.xml_tree(bot, clientid))
-
-        root.append(child)
-
-        tree.write(learnf_path, method="xml")

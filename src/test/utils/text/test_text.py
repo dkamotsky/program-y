@@ -1,4 +1,6 @@
 import unittest
+import os
+
 from programy.utils.text.text import TextUtils
 
 #############################################################################
@@ -40,7 +42,7 @@ class TextUtilsTests(unittest.TestCase):
 
     def test_strip_all_punctuation(self):
         self.assertEquals("", TextUtils.strip_all_punctuation(""))
-        self.assertEquals(" ", TextUtils.strip_all_punctuation(" "))
+        self.assertEquals("", TextUtils.strip_all_punctuation(" "))
         self.assertEquals("x y z", TextUtils.strip_all_punctuation("x! y? z."))
         self.assertEquals("a b c", TextUtils.strip_all_punctuation("!a b c?"))
 
@@ -53,3 +55,10 @@ class TextUtilsTests(unittest.TestCase):
         self.assertEquals("", TextUtils.strip_html(""))
         self.assertEquals("", TextUtils.strip_html("<html></html>"))
         self.assertEquals("Hello World", TextUtils.strip_html("<html>Hello <b>World</b></html>"))
+
+    def test_replace_path_seperator(self):
+        self.assertEquals("", TextUtils.replace_path_seperator(""))
+        self.assertEquals(" ", TextUtils.replace_path_seperator(" "))
+        self.assertEquals(os.sep, TextUtils.replace_path_seperator("/"))
+        self.assertEquals(".."+os.sep, TextUtils.replace_path_seperator("../"))
+        self.assertEquals("\\", TextUtils.replace_path_seperator("/", "/", "\\"))

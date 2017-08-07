@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -71,5 +71,8 @@ class MapCollection(object):
 
     def load(self, configuration):
         loader = MapLoader()
-        self._maps = loader.load_dir_contents(configuration.files, configuration.directories, configuration.extension)
+        if configuration.files is not None:
+            self._maps = loader.load_dir_contents(configuration.files, configuration.directories, configuration.extension)
+        else:
+            self._maps = {}
         return len(self._maps)

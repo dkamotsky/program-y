@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -55,7 +55,8 @@ class FileFinder(object):
             try:
                 collection[just_filename] = self.load_file_contents(file[1])
             except Exception as e:
-                logging.error ("Failed to load file contents for file [%s]. Exception %s.", file[1], e)
+                logging.exception(e)
+                logging.error ("Failed to load file contents for file [%s]"%file[1])
 
         return collection
 
@@ -66,7 +67,8 @@ class FileFinder(object):
         try:
             collection[just_filename] = self.load_file_contents(filename)
         except Exception as e:
-            logging.error ("Failed to load file contents for file [%s]. Exception %s.", filename, e)
+            logging.exception(e)
+            logging.error ("Failed to load file contents for file [%s]"%filename)
 
         return collection
 

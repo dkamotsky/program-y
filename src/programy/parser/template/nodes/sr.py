@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -17,6 +17,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 import logging
 
 from programy.parser.template.nodes.base import TemplateNode
+from programy.parser.exceptions import ParserException
 
 
 class TemplateSrNode(TemplateNode):
@@ -48,3 +49,12 @@ class TemplateSrNode(TemplateNode):
     def to_xml(self, bot, clientid):
         xml = "<sr />"
         return xml
+
+    #######################################################################################################
+    # <sr/> |
+
+    def parse_expression(self, graph, expression):
+        self._parse_node(graph, expression)
+        if len(self.children) > 0:
+            raise ParserException("<sr> node should not contains child text, use <sr /> or <sr></sr> only")
+

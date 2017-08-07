@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -20,9 +20,6 @@ from programy.parser.exceptions import ParserException
 
 from programy.parser.pattern.matcher import Match
 from programy.parser.pattern.nodes.base import PatternNode
-from programy.parser.pattern.nodes.topic import PatternTopicNode
-from programy.parser.pattern.nodes.that import PatternThatNode
-from programy.parser.pattern.nodes.template import PatternTemplateNode
 
 
 class PatternRootNode(PatternNode):

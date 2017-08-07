@@ -5,6 +5,11 @@ class LicenseKeys(object):
     def __init__(self):
         self._keys = {}
 
+    def add_key(self, name, value):
+        if name in self._keys:
+            logging.warning ("License key [%s], already exists"%name)
+        self._keys[name] = value
+
     def has_key(self, name):
         return bool(name in self._keys)
 
@@ -21,6 +26,7 @@ class LicenseKeys(object):
 
     def load_license_key_file(self, license_key_filename):
         try:
+            logging.info("Loading license key file: [%s]"%license_key_filename)
             with open(license_key_filename, "r+") as license_file:
                 for line in license_file:
                     self._process_license_key_line(line)

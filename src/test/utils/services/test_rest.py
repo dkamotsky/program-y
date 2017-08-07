@@ -30,12 +30,12 @@ class RestServiceTests(unittest.TestCase):
     def setUp(self):
         self.bot = TestBot()
         self.bot.license_keys = LicenseKeys()
-        self.bot.license_keys.load_license_key_file(os.path.dirname(__file__)+"/test.keys")
+        self.bot.license_keys.load_license_key_file(os.path.dirname(__file__)+ os.sep + "test.keys")
 
     def test_ask_question(self):
         config = BrainServiceConfiguration("rest")
-        config.set_parameter("host", "127.0.0.1")
-        config.set_parameter("method", "GET")
+        config._host = "127.0.0.1"
+        config._method = "GET"
 
         service = GenericRESTService(config=config, api=MockRestAPI())
         self.assertIsNotNone(service)

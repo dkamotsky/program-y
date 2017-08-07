@@ -12,209 +12,72 @@ from programy.parser.pattern.nodes.oneormore import PatternOneOrMoreWildCardNode
 from programy.parser.pattern.nodes.template import PatternTemplateNode
 
 from programy.dialog import Sentence
+from programy.bot import Bot
+from programy.brain import Brain
+from programy.config.sections.brain.brain import BrainConfiguration
+from programy.config.sections.bot.bot import BotConfiguration
 
 class AIMLParserTests(unittest.TestCase):
 
     def setUp(self):
-        self.parser = AIMLParser(supress_warnings=True, stop_on_invalid=True)
+        self.parser = AIMLParser()
         self.assertIsNotNone(self.parser)
+
+    def test_tag_name_from_namespace(self):
+        tag, namespace = self.parser.tag_and_namespace_from_text("aiml")
+        self.assertEquals("aiml", tag)
+        self.assertIsNone(namespace)
+
+        tag, namespace = self.parser.tag_and_namespace_from_text("{http://alicebot.org/2001/AIML}aiml")
+        self.assertEquals("aiml", tag)
+        self.assertEquals("{http://alicebot.org/2001/AIML}", namespace)
 
     def test_parse_from_file_valid(self):
         filename = os.path.dirname(__file__)+ '/valid.aiml'
         self.parser.parse_from_file(filename)
 
-    def test_parse_from_file_invalid(self):
-        filename = os.path.dirname(__file__)+ '/invalid.aiml'
-        self.parser.parse_from_file(filename)
+    def test_aiml_with_namespace(self):
+        self.parser.parse_from_text(
+        """<?xml version="1.0" encoding="ISO-8859-1"?>
+            <aiml version="1.01"
+                  xmlns="http://alicebot.org/2001/AIML"
+                  xmlns:aiml="http://alicebot.org/2001/AIML"
+                  xmlns:html="http://www.w3.org/TR/REC-html40">
+                <category>
+                    <pattern>*</pattern>
+                    <template>RESPONSE</template>
+                </category>
+            </aiml>
+        """)
 
-    def test_crud(self):
-        with self.assertRaises(ParseError) as raised:
-            self.parser.parse_from_text(
-                """Blah Blah Blah
-                """)
+        self.assertIsNotNone(self.parser.pattern_parser)
+        self.assertIsNotNone(self.parser.pattern_parser.root)
+        self.assertIsInstance(self.parser.pattern_parser.root, PatternRootNode)
+        self.assertTrue(self.parser.pattern_parser.root.has_one_or_more())
 
-    def test_no_aiml(self):
-        with self.assertRaises(ParseError) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                """)
-        self.assertTrue(str(raised.exception).startswith("no element found:"))
+        node = self.parser.pattern_parser.root.star
+        self.assertIsNotNone(node)
+        self.assertIsInstance(node, PatternOneOrMoreWildCardNode)
+        self.assertEquals(node.wildcard, "*")
 
-    def test_no_content(self):
-        with self.assertRaises(ParseError) as raised:
-            self.parser.parse_from_text(
-                """
-                """)
-        self.assertTrue(str(raised.exception).startswith("no element found:"))
+        topic = node.topic
+        self.assertIsNotNone(topic)
+        self.assertIsInstance(topic, PatternTopicNode)
+        self.assertTrue(topic.has_one_or_more())
+        self.assertIsInstance(topic.star, PatternOneOrMoreWildCardNode)
+        self.assertEquals(topic.star.wildcard, "*")
 
-    def test_base_aiml_no_content(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, no categories in aiml file")
+        that = topic.star.that
+        self.assertIsNotNone(that)
+        self.assertIsInstance(that, PatternThatNode)
+        self.assertTrue(that.has_one_or_more())
+        self.assertIsInstance(that.star, PatternOneOrMoreWildCardNode)
+        self.assertEquals(that.star.wildcard, "*")
 
-    def test_base_aiml_topic_no_name(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <topic>
-                    </topic>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, missing name attribute for topic")
-
-    def test_base_aiml_topic_no_category(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <topic name="test">
-                    </topic>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, no categories in topic")
-
-    def test_base_aiml_topic_category_no_content(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <topic name="test">
-                        <category>
-                        </category>
-                    </topic>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, no template node found in category")
-
-    def test_base_aiml_topic_at_multiple_levels(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <topic name="test">
-                        <category>
-                            <topic name="test2" />
-                            <pattern>*</pattern>
-                            <template>RESPONSE</template>
-                        </category>
-                    </topic>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, topic exists in category AND as parent node")
-
-    def test_base_aiml_topic_category_no_template(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <topic name="test">
-                        <category>
-                            <pattern>*</pattern>
-                        </category>
-                    </topic>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, no template node found in category")
-
-    def test_base_aiml_category_no_content(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <category>
-                    </category>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, no template node found in category")
-
-    def test_base_aiml_category_no_template(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <category>
-                        <pattern>*</pattern>
-                    </category>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error, no template node found in category")
-
-    def test_base_aiml_topic_empty_parent_node(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <topic name="">
-                        <category>
-                            <pattern>*</pattern>
-                            <template>RESPONSE</template>
-                        </category>
-                    </topic>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Topic name empty or null")
-
-    def test_base_aiml_topic_with_something_else(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <topic name="test">
-                        <xxxx>
-                            <pattern>*</pattern>
-                            <template>RESPONSE</template>
-                        </xxxx>
-                    </topic>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Error unknown child node of topic, xxxx")
-
-    def test_base_aiml_topic_empty_child_node1(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <category>
-                        <topic name="" />
-                        <pattern>*</pattern>
-                        <template>RESPONSE</template>
-                    </category>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Topic node text is empty")
-
-    def test_base_aiml_topic_empty_child_node2(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <category>
-                        <topic></topic>
-                        <pattern>*</pattern>
-                        <template>RESPONSE</template>
-                    </category>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "Topic node text is empty")
-
-    def test_base_aiml_that_empty_child_node(self):
-        with self.assertRaises(ParserException) as raised:
-            self.parser.parse_from_text(
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <aiml>
-                    <category>
-                        <that></that>
-                        <pattern>*</pattern>
-                        <template>RESPONSE</template>
-                    </category>
-                </aiml>
-                """)
-        self.assertEqual(raised.exception.message, "That node text is empty")
+        template = that.star.template
+        self.assertIsNotNone(template)
+        self.assertIsInstance(template, PatternTemplateNode)
+        self.assertEqual(template.template.resolve(bot=None, clientid="test"), "RESPONSE")
 
     def test_base_aiml_topic_category_template(self):
         self.parser.parse_from_text(
@@ -709,7 +572,9 @@ class AIMLParserTests(unittest.TestCase):
 
         self.parser.pattern_parser.dump()
 
-        context = self.parser.match_sentence(None, "test", Sentence("HELLO"), "*", "*")
+        bot = Bot(Brain(BrainConfiguration()), config=BotConfiguration())
+
+        context = self.parser.match_sentence(bot, "test", Sentence("HELLO"), "*", "*")
         self.assertIsNotNone(context)
         self.assertEqual("Hiya", context.template_node().template.resolve(None, None))
 
@@ -757,5 +622,26 @@ class AIMLParserTests(unittest.TestCase):
             </aiml>
             """)
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_duplicate_topics(self):
+
+        self.parser.parse_from_text(
+            """<?xml version="1.0" encoding="UTF-8"?>
+            <aiml>
+                <topic name="TOPIC1">
+                    <category>
+                        <pattern>*</pattern>
+                        <template>
+                            Test Text
+                        </template>
+                    </category>
+                </topic>
+                <topic name="TOPIC2">
+                    <category>
+                        <pattern>*</pattern>
+                        <template>
+                            Test Text
+                        </template>
+                    </category>
+                </topic>
+            </aiml>
+            """)

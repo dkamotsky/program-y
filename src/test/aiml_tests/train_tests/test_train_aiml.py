@@ -2,7 +2,8 @@ import unittest
 import os
 from test.aiml_tests.client import TestClient
 from programy.config.file.factory import ConfigurationFactory
-from programy.config.client.client import ClientConfiguration
+from programy.config.programy import ProgramyConfiguration
+from programy.config.sections.client.console import ConsoleConfiguration
 
 class TrainTestClient(TestClient):
 
@@ -10,8 +11,9 @@ class TrainTestClient(TestClient):
         TestClient.__init__(self)
 
     def load_configuration(self, arguments):
-        self.configuration = ClientConfiguration()
-        ConfigurationFactory.load_configuration_from_file(self.configuration, os.path.dirname(__file__)+"/testconfig.yaml")
+        self.configuration = ConfigurationFactory.load_configuration_from_file(ConsoleConfiguration(),
+                                                                               os.path.dirname(__file__)+ os.sep + "testconfig.yaml",
+                                                                               bot_root=os.path.dirname(__file__))
 
 class TrainAIMLTests(unittest.TestCase):
 
@@ -53,9 +55,9 @@ class TrainAIMLTests(unittest.TestCase):
         response = TrainAIMLTests.test_client.bot.ask_question("test", "mommy likes to smoke cigars")
         self.assertIsNotNone(response)
 
-        self.assertEqual('Now you can ask me: "Who LIKES TO SMOKE CIGARS?" and "What does my MOMMY like?"', response)
+        self.assertEqual('Now you can ask me: "Who likes TO SMOKE CIGARS?" and "What does my mommy like?"', response)
 
         response = TrainAIMLTests.test_client.bot.ask_question("test", "who likes to smoke cigars")
         self.assertIsNotNone(response)
-        self.assertEqual("Your MOMMY", response)
+        self.assertEqual("Your mommy", response)
 

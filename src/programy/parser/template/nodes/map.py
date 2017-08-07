@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -21,6 +21,8 @@ from programy.parser.template.maps.singular import SingularMap
 from programy.parser.template.maps.predecessor import PredecessorMap
 from programy.parser.template.maps.successor import SuccessorMap
 from programy.parser.template.nodes.base import TemplateNode
+from programy.parser.exceptions import ParserException
+from programy.utils.text.text import TextUtils
 
 class TemplateMapNode(TemplateNode):
 
@@ -46,6 +48,13 @@ class TemplateMapNode(TemplateNode):
         else:
             return ""
 
+    def get_default_value(self, bot):
+        value = bot.brain.properties.property("default-map")
+        if value is None:
+            logging.error("No value for default-map defined, empty string returned")
+            value = ""
+        return value
+
     def resolve(self, bot, clientid):
         try:
             name = self.name.resolve(bot, clientid).upper()
@@ -55,22 +64,16 @@ class TemplateMapNode(TemplateNode):
                 map = self._internal_maps[name]
                 value = map.map(var)
             else:
-                the_map = bot.brain.maps.map(name)
-                if the_map is None:
-                    logging.error("No map defined for [%s], using default-map" % name)
-                    value = bot.brain.properties.property("default-map")
-                    if value is None:
-                        logging.error("No value for default-map defined, empty string returned")
-                        value = ""
+                if bot.brain.maps.contains(name) is False:
+                    logging.error("No map defined for [%s], using default-map as value" % var)
+                    value = self.get_default_value(bot)
                 else:
+                    the_map = bot.brain.maps.map(name)
                     if var in the_map:
                         value = the_map[var]
                     else:
-                        logging.error("No value defined [%s] in map [%s], using default-map" % (var, name))
-                        value = bot.brain.properties.property("default-map")
-                        if value is None:
-                            logging.error("No value for default-map defined, empty string returned")
-                            value = ""
+                        logging.error("No value defined for [%s], using default-map as value" % var)
+                        value = self.get_default_value(bot)
 
             logging.debug("MAP [%s] resolved to [%s] = [%s]", self.to_string(), name, value)
             return value
@@ -81,14 +84,41 @@ class TemplateMapNode(TemplateNode):
     def to_string(self):
         return "[MAP (%s)]" % (self.name.to_string())
 
-    def output(self, tabs="", output=logging.debug):
-        self.output_child(self, tabs, output=logging.debug)
-
     def to_xml(self, bot, clientid):
         xml = "<map "
         xml += ' name="%s"' % self.name.resolve(bot, clientid)
         xml += ">"
-        for child in self.children:
-            xml += child.to_xml(bot, clientid)
+        xml += self.children_to_xml(bot, clientid)
         xml += "</map>"
         return xml
+
+    # ######################################################################################################
+    # MAP_EXPRESSION ::=
+    # <map name="WORD">TEMPLATE_EXPRESSION</map> |
+    # <map><name>TEMPLATE_EXPRESSION</name>TEMPLATE_EXPRESSION</map>
+
+    def parse_expression(self, graph, expression):
+
+        name_found = False
+
+        if 'name' in expression.attrib:
+            self.name = self.parse_attrib_value_as_word_node(graph, expression, 'name')
+            name_found = True
+
+        self.parse_text(graph, self.get_text_from_element(expression))
+
+        for child in expression:
+            tag_name = TextUtils.tag_from_text(child.tag)
+
+            if tag_name == 'name':
+                self.name = self.parse_children_as_word_node(graph, child)
+                name_found = True
+
+            else:
+                graph.parse_tag_expression(child, self)
+
+            self.parse_text(graph, self.get_tail_from_element(child))
+
+        if name_found is False:
+            raise ParserException("Error, name not found in map", xml_element=expression)
+

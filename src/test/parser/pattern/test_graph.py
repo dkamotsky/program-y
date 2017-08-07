@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 
-from test.parser.pattern.nodes.base import PatternTestBaseClass
+from test.parser.pattern.base import PatternTestBaseClass
 
-from programy.parser.exceptions import ParserException
+from programy.parser.exceptions import ParserException, DuplicateGrammarException
 from programy.parser.pattern.graph import PatternGraph
 from programy.parser.pattern.nodes.root import PatternRootNode
 from programy.parser.pattern.nodes.topic import PatternTopicNode
@@ -17,6 +17,7 @@ from programy.parser.pattern.nodes.set import PatternSetNode
 from programy.parser.pattern.nodes.bot import PatternBotNode
 from programy.parser.template.nodes.base import TemplateNode
 from programy.parser.template.nodes.word import TemplateWordNode
+from programy.mappings.sets import SetLoader
 
 
 class PatternGraphTests(PatternTestBaseClass):
@@ -29,7 +30,7 @@ class PatternGraphTests(PatternTestBaseClass):
 
     def test_init_with_root(self):
         root = PatternRootNode()
-        graph = PatternGraph(root)
+        graph = PatternGraph(root_node=root)
         self.assertIsNotNone(graph)
         self.assertIsNotNone(graph.root)
         self.assertIsInstance(graph.root, PatternRootNode)
@@ -38,7 +39,7 @@ class PatternGraphTests(PatternTestBaseClass):
     def test_init_with_invalid_root(self):
         root = PatternWordNode("Word")
         with self.assertRaises(ParserException):
-            graph = PatternGraph(root)
+            graph = PatternGraph(root_node=root)
 
     def test_node_from_text_prioity(self):
         graph = PatternGraph()
@@ -464,12 +465,12 @@ class PatternGraphTests(PatternTestBaseClass):
 
         element = ET.fromstring('<pattern><set>set1</set> IS A VALUE</pattern>')
         graph.add_pattern_to_graph(element, topic_element, that_element, template_graph_root)
-        
+
         self.assertIsNotNone(graph.root)
         self.assertIsNotNone(graph.root.children)
         self.assertEqual(len(graph.root.children), 1)
         self.assertIsInstance(graph.root.children[0], PatternSetNode)
-        self.assertEqual(graph.root.children[0].word, "SET1")
+        self.assertEqual(graph.root.children[0].set_name, "SET1")
 
     def test_add_pattern_to_graph_basic_set_name_attrib(self):
         graph = PatternGraph()
@@ -481,12 +482,12 @@ class PatternGraphTests(PatternTestBaseClass):
 
         element = ET.fromstring('<pattern><set name="set1" /></pattern>')
         graph.add_pattern_to_graph(element, topic_element, that_element, template_graph_root)
-        
+
         self.assertIsNotNone(graph.root)
         self.assertIsNotNone(graph.root.children)
         self.assertEqual(len(graph.root.children), 1)
         self.assertIsInstance(graph.root.children[0], PatternSetNode)
-        self.assertEqual(graph.root.children[0].word, "SET1")
+        self.assertEqual(graph.root.children[0].set_name, "SET1")
 
     def test_add_pattern_to_graph_basic_iset(self):
         graph = PatternGraph()
@@ -501,7 +502,6 @@ class PatternGraphTests(PatternTestBaseClass):
         self.assertIsNotNone(graph.root.children)
         self.assertEqual(len(graph.root.children), 1)
         self.assertIsInstance(graph.root.children[0], PatternISetNode)
-        self.assertEqual(graph.root.children[0].word, "iset")
 
     def test_add_pattern_to_graph_basic_multiple_isets(self):
         graph = PatternGraph()
@@ -520,9 +520,7 @@ class PatternGraphTests(PatternTestBaseClass):
         self.assertIsInstance(graph.root.children[0], PatternWordNode)
         self.assertEqual(len(graph.root.children[0].children), 2)
         self.assertIsInstance(graph.root.children[0].children[0], PatternISetNode)
-        self.assertEqual(graph.root.children[0].children[0].word, "iset")
         self.assertIsInstance(graph.root.children[0].children[1], PatternISetNode)
-        self.assertEqual(graph.root.children[0].children[1].word, "iset")
 
     def test_add_pattern_to_graph_basic_bot_text(self):
         graph = PatternGraph()
@@ -530,16 +528,16 @@ class PatternGraphTests(PatternTestBaseClass):
         that_element = ET.fromstring('<that>*</that>')
         template_graph_root = None
 
-        self.bot.brain.properties._properties['bot1'] = 'val1'
+        self.bot.brain.properties.add_property('bot1', 'val1')
 
         element = ET.fromstring('<pattern><bot>bot1</bot></pattern>')
         graph.add_pattern_to_graph(element, topic_element, that_element, template_graph_root)
-        
+
         self.assertIsNotNone(graph.root)
         self.assertIsNotNone(graph.root.children)
         self.assertEqual(len(graph.root.children), 1)
         self.assertIsInstance(graph.root.children[0], PatternBotNode)
-        self.assertEqual(graph.root.children[0].word, "bot1")
+        self.assertEqual(graph.root.children[0].property, "bot1")
 
     def test_add_pattern_to_graph_basic_bot_name_attrib(self):
         graph = PatternGraph()
@@ -547,16 +545,16 @@ class PatternGraphTests(PatternTestBaseClass):
         that_element = ET.fromstring('<that>*</that>')
         template_graph_root = None
 
-        self.bot.brain.properties._properties['bot1'] = 'val1'
+        self.bot.brain.properties.add_property('bot1', 'val1')
 
         element = ET.fromstring('<pattern><bot name="bot1" /></pattern>')
         graph.add_pattern_to_graph(element, topic_element, that_element, template_graph_root)
-        
+
         self.assertIsNotNone(graph.root)
         self.assertIsNotNone(graph.root.children)
         self.assertEqual(len(graph.root.children), 1)
         self.assertIsInstance(graph.root.children[0], PatternBotNode)
-        self.assertEqual(graph.root.children[0].word, "bot1")
+        self.assertEqual(graph.root.children[0].property, "bot1")
 
     def test_add_pattern_to_graph_word_set_bot(self):
         graph = PatternGraph()
@@ -565,11 +563,11 @@ class PatternGraphTests(PatternTestBaseClass):
         template_graph_root = None
 
         self.bot.brain.sets._sets["SET1"] = ["val1", "val2", "val3", "val5"]
-        self.bot.brain.properties._properties['bot1'] = 'val1'
+        self.bot.brain.properties.add_property('bot1', 'val1')
 
         element = ET.fromstring('<pattern>test1 test2 <set name="SET1" /> test4 <bot name="bot1" /> test6</pattern>')
         graph.add_pattern_to_graph(element, topic_element, that_element, template_graph_root)
-        
+
         self.assertIsNotNone(graph.root)
 
         self.assertIsNotNone(graph.root.children)
@@ -585,7 +583,7 @@ class PatternGraphTests(PatternTestBaseClass):
         self.assertIsNotNone(graph.root.children[0].children[0].children)
         self.assertEqual(len(graph.root.children[0].children[0].children), 1)
         self.assertIsInstance(graph.root.children[0].children[0].children[0], PatternSetNode)
-        self.assertEqual(graph.root.children[0].children[0].children[0].word, "SET1")
+        self.assertEqual(graph.root.children[0].children[0].children[0].set_name, "SET1")
 
         self.assertIsNotNone(graph.root.children[0].children[0].children[0].children)
         self.assertEqual(len(graph.root.children[0].children[0].children[0].children), 1)
@@ -595,7 +593,7 @@ class PatternGraphTests(PatternTestBaseClass):
         self.assertIsNotNone(graph.root.children[0].children[0].children[0].children[0].children)
         self.assertEqual(len(graph.root.children[0].children[0].children[0].children[0].children), 1)
         self.assertIsInstance(graph.root.children[0].children[0].children[0].children[0].children[0], PatternBotNode)
-        self.assertEqual(graph.root.children[0].children[0].children[0].children[0].children[0].word, "bot1")
+        self.assertEqual(graph.root.children[0].children[0].children[0].children[0].children[0].property, "bot1")
 
         self.assertIsNotNone(graph.root.children[0].children[0].children[0].children[0].children[0].children)
         self.assertEqual(len(graph.root.children[0].children[0].children[0].children[0].children[0].children), 1)
@@ -670,7 +668,7 @@ class PatternGraphTests(PatternTestBaseClass):
 
         element = ET.fromstring('<pattern>*</pattern>')
         graph.add_pattern_to_graph(element, topic_element, that_element, template_graph_root)
-        
+
         self.assertIsNotNone(graph.root)
         self.assertIsNotNone(graph.root._1ormore_star)
         self.assertIsInstance(graph.root._1ormore_star, PatternOneOrMoreWildCardNode)
@@ -710,7 +708,7 @@ class PatternGraphTests(PatternTestBaseClass):
 
     ##################################################################################################################
     #
-        
+
     def test_add_topic_to_node_star(self):
         graph = PatternGraph()
 
@@ -772,7 +770,7 @@ class PatternGraphTests(PatternTestBaseClass):
 
         self.assertTrue(base_node.topic.children[0].has_children())
         self.assertIsInstance(base_node.topic.children[0].children[0], PatternSetNode)
-        self.assertEqual(base_node.topic.children[0].children[0].word, "TEST")
+        self.assertEqual(base_node.topic.children[0].children[0].set_name, "TEST")
 
         self.assertTrue(base_node.topic.children[0].children[0].has_children())
         self.assertIsInstance(base_node.topic.children[0].children[0].children[0], PatternWordNode)
@@ -842,7 +840,7 @@ class PatternGraphTests(PatternTestBaseClass):
 
         self.assertTrue(base_node.that.children[0].has_children())
         self.assertIsInstance(base_node.that.children[0].children[0], PatternSetNode)
-        self.assertEqual(base_node.that.children[0].children[0].word, "TEST")
+        self.assertEqual(base_node.that.children[0].children[0].set_name, "TEST")
 
         self.assertTrue(base_node.that.children[0].children[0].has_children())
         self.assertIsInstance(base_node.that.children[0].children[0].children[0], PatternWordNode)

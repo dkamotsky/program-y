@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -62,7 +62,7 @@ class TemplateLogNode(TemplateAttribNode):
         if attrib_name != 'level':
             raise ParserException("Invalid attribute name %s for this node", attrib_name)
         if attrib_value not in ['debug', 'info', 'warning', 'error']:
-            raise ParserException("Invalid attribute value %s for this node %s", attrib_value. attrib_name)
+            raise ParserException("Invalid attribute value %s for this node %s", attrib_value, attrib_name)
         self._level = attrib_value
 
     def to_xml(self, bot, clientid):
@@ -70,7 +70,15 @@ class TemplateLogNode(TemplateAttribNode):
         if self._level is not None:
             xml += ' level="%s"' % self._level
         xml += ">"
-        for child in self.children:
-            xml += child.to_xml(bot, clientid)
+        xml += self.children_to_xml(bot, clientid)
         xml += "</log>"
         return xml
+
+    #######################################################################################################
+    # LOG_EXPRESSION ::== <log>Message</log>
+    #                           <log level="error|warning|debug|info">Message</log>
+    #
+
+    def parse_expression(self, graph, expression):
+        self._parse_node_with_attrib(graph, expression, "level", "debug")
+

@@ -42,7 +42,7 @@ For more information see [url]
 		<template>
 		    <srai>FIRST <star index="1"/> <srai>SECOND <star index="2"/></srai></srai>
 		</template>
-
 	</category>
+
 
 </aiml>

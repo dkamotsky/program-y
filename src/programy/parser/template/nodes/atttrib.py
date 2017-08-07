@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -22,5 +22,5 @@ class TemplateAttribNode(TemplateNode):
         TemplateNode.__init__(self)
 
     def set_attrib(self, attrib_name, attrib_value):
-        pass
+        raise NotImplemented("Should not call this base method, implementation missing")
 

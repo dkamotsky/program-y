@@ -1,7 +1,7 @@
 import unittest
 import os
 from test.aiml_tests.client import TestClient
-from programy.config.brain import BrainFileConfiguration
+from programy.config.sections.brain.file import BrainFileConfiguration
 
 class BasicTestClient(TestClient):
 
@@ -10,7 +10,7 @@ class BasicTestClient(TestClient):
 
     def load_configuration(self, arguments):
         super(BasicTestClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration.files.aiml_files._files = os.path.dirname(__file__)
 
 class StarAIMLTests(unittest.TestCase):
 
@@ -94,7 +94,19 @@ class StarAIMLTests(unittest.TestCase):
         self.assertEqual(response, 'RECURSED ENDED')
 
     def test_recursion_four_stars(self):
-        StarAIMLTests.test_client.dump_bot_brain_tree()
         response = StarAIMLTests.test_client.bot.ask_question("test", "RECURSIVE TEST THIS THAT OTHER")
         self.assertIsNotNone(response)
         self.assertEqual(response, 'RECURSED RECURSED RECURSED ENDED')
+
+    def test_star_case(self):
+        response = StarAIMLTests.test_client.bot.ask_question("test", "STAR CASE TEST1")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'TEST1')
+
+        response = StarAIMLTests.test_client.bot.ask_question("test", "STAR CASE test2")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'test2')
+
+        response = StarAIMLTests.test_client.bot.ask_question("test", "STAR CASE TesT3")
+        self.assertIsNotNone(response)
+        self.assertEqual(response, 'TesT3')

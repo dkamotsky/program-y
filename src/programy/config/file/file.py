@@ -1,5 +1,5 @@
 """
-Copyright (c) 2016 Keith Sterling
+Copyright (c) 2016-17 Keith Sterling http://www.keithsterling.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -20,9 +20,6 @@ from abc import ABCMeta, abstractmethod
 class BaseConfigurationFile(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, client_config):
-        self.client_config = client_config
-
     @abstractmethod
     def load_from_text(self, text, bot_root):
         """
@@ -42,13 +39,13 @@ class BaseConfigurationFile(object):
         """
 
     @abstractmethod
-    def get_section_data(self, section_name, parent_section=None):
+    def get_keys(self, child_section):
         """
         Never Implemented
         """
 
     @abstractmethod
-    def get_child_section_keys(self, section_name, parent_section=None):
+    def get_child_section_keys(self, section_name, parent_section):
         """
         Never Implemented
         """
@@ -59,10 +56,17 @@ class BaseConfigurationFile(object):
         Never Implemented
         """
 
-    def _infer_type_from_string(self, text):
-        if text == 'True' or text == 'true':
+    def convert_to_bool(self, value):
+        if value.upper() == 'TRUE':
             return True
-        elif text == 'False' or text == 'false':
+        elif value.upper() == 'FALSE':
             return False
         else:
-            return text
+            raise Exception("Invalid boolean config value [%s]"%value)
+
+    def convert_to_int(self, value):
+        if value.isdigit():
+            return int(value)
+        else:
+            raise Exception("Invalid integer config value [%s]"%value)
+

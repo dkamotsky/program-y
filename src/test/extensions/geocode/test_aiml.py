@@ -1,7 +1,7 @@
 import unittest
 import os
 from test.aiml_tests.client import TestClient
-from programy.config.brain import BrainFileConfiguration
+from programy.config.sections.brain.file import BrainFileConfiguration
 
 
 class GeoCodeTestsClient(TestClient):
@@ -11,14 +11,14 @@ class GeoCodeTestsClient(TestClient):
 
     def load_configuration(self, arguments):
         super(GeoCodeTestsClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration.files.aiml_files._files = files=os.path.dirname(__file__)
 
 class GeoCodeAIMLTests(unittest.TestCase):
 
     def setUp (self):
         GeoCodeAIMLTests.test_client = GeoCodeTestsClient()
 
-        latlong     = os.path.dirname(__file__) + "/google_latlong.json"
+        latlong     = os.path.dirname(__file__) +  os.sep + "google_latlong.json"
 
         GeoCodeAIMLTests.test_client.bot.license_keys.load_license_key_data("""
         GOOGLE_LATLONG = %s

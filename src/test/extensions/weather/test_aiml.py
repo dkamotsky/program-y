@@ -1,7 +1,7 @@
 import unittest
 import os
 from test.aiml_tests.client import TestClient
-from programy.config.brain import BrainFileConfiguration
+from programy.config.sections.brain.file import BrainFileConfiguration
 
 class WeathersTestsClient(TestClient):
 
@@ -10,7 +10,7 @@ class WeathersTestsClient(TestClient):
 
     def load_configuration(self, arguments):
         super(WeathersTestsClient, self).load_configuration(arguments)
-        self.configuration.brain_configuration._aiml_files = BrainFileConfiguration(files=os.path.dirname(__file__))
+        self.configuration.brain_configuration.files.aiml_files._files = files=os.path.dirname(__file__)
 
 class WeathersAIMLTests(unittest.TestCase):
 
@@ -18,10 +18,10 @@ class WeathersAIMLTests(unittest.TestCase):
 
         WeathersAIMLTests.test_client = WeathersTestsClient()
 
-        latlong     = os.path.dirname(__file__) + "/google_latlong.json"
-        observation = os.path.dirname(__file__) + "/observation.json"
-        threehourly = os.path.dirname(__file__) + "/forecast_3hourly.json"
-        daily       = os.path.dirname(__file__) + "/forecast_daily.json"
+        latlong     = os.path.dirname(__file__) + os.sep + "google_latlong.json"
+        observation = os.path.dirname(__file__) + os.sep + "observation.json"
+        threehourly = os.path.dirname(__file__) + os.sep + "forecast_3hourly.json"
+        daily       = os.path.dirname(__file__) + os.sep + "forecast_daily.json"
 
         WeathersAIMLTests.test_client.bot.license_keys.load_license_key_data("""
         GOOGLE_LATLONG=%s
