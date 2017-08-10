@@ -2,7 +2,6 @@ requests
 flask
 python-dateutil
 beautifulsoup4
-lxml
 wikipedia
 pylint
 nose
