@@ -54,7 +54,7 @@ class JSONConfigurationFile(BaseConfigurationFile):
         if option_name in section:
             return section[option_name]
         else:
-            logging.warning("Missing value for [%s] in config , return default value %s", option_name, missing_value)
+            logging.info("Missing value for [%s] in config , return default value %s", option_name, missing_value)
             return missing_value
 
 

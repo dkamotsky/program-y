@@ -45,15 +45,15 @@ class NodeFactory(object):
     def valid_config_line(self, line):
 
         if len(line) == 0:
-            logging.error ("Config line empty")
+            logging.info("Config line empty")
             return False
 
         if line.startswith('#'):
-            logging.error ("Config line is comment")
+            logging.info("Config line is comment")
             return False
 
         if "=" not in line:
-            logging.error ("Config line missing '=' [%s]"%line)
+            logging.warning("Config line missing '=' [%s]"%line)
             return False
 
         return True
