@@ -58,7 +58,7 @@ class PatternTopicNode(PatternNode):
             return None
 
         if word_no >= words.num_words():
-            logging.warning("%sword_no %d exceeded words size %d when matching Topic", tabs, word_no, words.num_words())
+            logging.debug("%sword_no %d exceeded words size %d when matching Topic", tabs, word_no, words.num_words())
             return None            
 
         if words.word(word_no) == PatternTopicNode.TOPIC:
