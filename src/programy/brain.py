@@ -240,10 +240,10 @@ class Brain(object):
 
         topic_pattern = conversation.predicate("topic")
         if topic_pattern is None:
-            logging.info("No Topic pattern default to [*]")
+            logging.debug("No Topic pattern default to [*]")
             topic_pattern = "*"
         else:
-            logging.info("Topic pattern = [%s]", topic_pattern)
+            logging.debug("Topic pattern = [%s]", topic_pattern)
 
         try:
             that_question = conversation.nth_question(2)
@@ -253,13 +253,13 @@ class Brain(object):
             # that as the that_pattern, otherwise we default to '*' as pattern
             if that_sentence.response is not None and that_sentence.response != '':
                 that_pattern = TextUtils.strip_all_punctuation(that_sentence.response)
-                logging.info("That pattern = [%s]", that_pattern)
+                logging.debug("That pattern = [%s]", that_pattern)
             else:
-                logging.info("That pattern, no response, default to [*]")
+                logging.debug("That pattern, no response, default to [*]")
                 that_pattern = "*"
 
         except Exception:
-            logging.info("No That pattern default to [*]")
+            logging.debug("No That pattern default to [*]")
             that_pattern = "*"
 
         match_context =  self._aiml_parser.match_sentence(bot, clientid,
