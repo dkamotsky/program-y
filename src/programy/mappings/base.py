@@ -47,7 +47,7 @@ class BaseCollection(object):
                 jsonobj=json.load(my_file)
             count=self.process_json(jsonobj)
         except Exception as excep:        
-            logging.warn("Failed to load data from [%s] as JSON, will retry in the old style. %s", filename, excep)
+            logging.info("Failed to load data from [%s] as JSON, will retry in the old style. %s", filename, excep)
             with open(filename, "r+") as data_file:
                 for line in data_file:
                     line = line.strip()
@@ -63,7 +63,7 @@ class BaseCollection(object):
             jsonobj=json.loads(text)
             count=self.process_json(jsonobj)
         except Exception as excep:        
-            logging.warn("Failed to load data [%s] as JSON, will retry in the old style. %s", text, excep)        
+            logging.info("Failed to load data [%s] as JSON, will retry in the old style. %s", text, excep)        
             lines = text.split("\n")
             for line in lines:
                 line = line.strip()
