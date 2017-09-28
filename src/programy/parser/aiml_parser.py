@@ -374,7 +374,7 @@ class AIMLParser(object):
         topic_sentence = Sentence(topic_pattern)
         that_sentence = Sentence(that_pattern)
 
-        logging.debug("AIML Parser matching sentence [%s], topic=[%s], that=[%s] ", pattern_sentence.text(), topic_pattern, that_pattern)
+        logging.info("AIML Parser matching sentence [%s], topic=[%s], that=[%s] ", pattern_sentence.text(), topic_pattern, that_pattern)
 
         sentence = Sentence()
         sentence.append_sentence(pattern_sentence)

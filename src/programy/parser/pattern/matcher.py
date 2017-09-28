@@ -125,7 +125,7 @@ class MatchContext(object):
     def thatstar(self, index):
         return self._get_indexed_match_by_type(index,  Match.THAT)
 
-    def list_matches(self, output_func=logging.debug):
+    def list_matches(self, output_func=logging.info):
         output_func("Matches...")
         count = 1
         for match in self._matched_nodes:
